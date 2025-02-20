@@ -1,0 +1,12 @@
+# fichiers compilation et binaires 
+bin/
+*.out
+*.a
+*.so
+*.dll
+
+# config editeur
+.vscode/
+
+# macos 
+.DS_Store
