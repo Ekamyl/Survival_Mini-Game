@@ -93,14 +93,42 @@ void destroy_noise_texture () {
 }
 
 
-void apply_glitch(SDL_Texture *texture, int width, int height) {
+void apply_glitch(Camera_t * camera, SDL_Texture *texture, int width, int height) {
     
     int axis = rand() % 2 ; // 0 pour horizontal, 1 pour vertical
 
-    int maxRender = 30;
+    float widthMax = WINDOW_WIDTH / 4, widthMin = WINDOW_WIDTH / 8;
+    float heightMax = WINDOW_HEIGHT / 4, heightMin = WINDOW_HEIGHT / 8;
+    int gap = 10;
+    int maxRender = 40;
     for (int i = 0; i < maxRender; i++) {
-        
+        if (axis == 0) {        // decalage pixel a l'horizontal 
+            float width = rand() % (int) (widthMax - widthMin) + widthMin ;
+            float height = gap ;
+            float x = rand() % (int) (WINDOW_WIDTH - width) ;
+            float y = height * (rand() % (int) ((WINDOW_HEIGHT / height) - 2) + 1) ;
+
+            gap = (rand() % 2 ? gap : -gap) ;      // distance decalage de la ranger de pixel  
+
+            SDL_Rect srcrect = {x + camera->x, y + camera->y, width, height};
+            SDL_Rect dstrect = {x, y + gap, width, height};
+            SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+        }
+        else {
+            float width = gap ;
+            float height = rand() % (int) (heightMax - heightMin) + heightMin ;
+            float x = width * (rand() % (int) ((WINDOW_WIDTH / width) - 2) + 1) ;
+            float y = rand() % (int) (WINDOW_HEIGHT - height) ;
+
+            gap = (rand() % 2 ? gap : -gap) ;      // distance decalage de la ranger de pixel  
+
+            SDL_Rect srcrect = {x + camera->x, y + camera->y, width, height};
+            SDL_Rect dstrect = {x + gap, y, width, height};
+            SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+        }
     }
+
+    
 }
 
 
@@ -113,15 +141,18 @@ int draw (Camera_t * camera, Player_t * player, Map_t * map) {
         
         // render la map
         draw_map(map, camera);
-        if (gameStatus.frameCount > 30) {
-            apply_glitch(map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
-        }
-
+        
         // render le player 
         draw_player (player, camera);
+        
+        // applique un effet de glitch sur l'ecran
+        if (gameStatus.frameCount > (rand() % 60)) {
+            apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
+        }
 
-        SDL_Rect srcrect = {(WINDOW_WIDTH / 4) * (rand() % 4), (WINDOW_HEIGHT / 4) * (rand() % 4), WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4};
-        SDL_RenderCopy(renderer, noiseTexture, &srcrect, NULL);
+        // affiche un bruit visuel, ressemble a l'ecran gris des tv cathodique 
+        // SDL_Rect srcrect = {(WINDOW_WIDTH / 4) * (rand() % 4), (WINDOW_HEIGHT / 4) * (rand() % 4), WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4};
+        // SDL_RenderCopy(renderer, noiseTexture, &srcrect, NULL);
     }
     else {
         // render la map
