@@ -2,8 +2,24 @@
 #include "../include/main.h"
 #include "../include/map.h"
 #include "../include/texture_loader.h"
-#include "../include/camera.h"
 
+
+StaticBody_t return_null () {
+    StaticBody_t null = {0, 0, 0, 0};
+
+    return null;
+}
+
+StaticBody_t return_ground () {
+    StaticBody_t ground = {
+        .rec.x = 0,
+        .rec.y = (WINDOW_HEIGHT / 4) * 3,
+        .rec.width = GROUND_WIDTH,
+        .rec.height = GROUND_HEIGHT
+    };
+
+    return ground;
+}
 
 Map_t * map_constructor () {
     Map_t * map = malloc(sizeof(Map_t));
@@ -12,12 +28,9 @@ Map_t * map_constructor () {
         return NULL;
     }
     
-    map->ground.rec.x = 0; 
-    map->ground.rec.y = (WINDOW_HEIGHT / 4) * 3;
-    map->ground.rec.width = GROUND_WIDTH;
-    map->ground.rec.height = GROUND_HEIGHT;
+    map->ground = return_ground();
 
-    map->background = load_png("assets/background_grey.png");
+    map->background = load_png("assets/background.png");
     if (map->background == NULL) {
         return NULL;
     }

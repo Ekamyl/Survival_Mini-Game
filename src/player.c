@@ -26,7 +26,7 @@ Player_t * player_constructor () {
     player->deceleration = 0.3;
     player->vMax = 8;
 
-    player->texture = load_png("assets/playerSpriteSheet_black.png");
+    player->texture = load_png("assets/playerSpriteSheet_grey.png");
     if (player->texture == NULL) {
         return NULL;
     }

@@ -2,7 +2,6 @@
 
 
 #include "lib.h"
-#include "main.h"
 #include "player.h"
 #include "map.h"
 #include "camera.h"

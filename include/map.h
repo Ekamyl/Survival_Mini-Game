@@ -10,9 +10,10 @@
 #define GROUND_WIDTH BACKGROUND_WIDTH
 #define GROUND_HEIGHT (WINDOW_HEIGHT / 4)
 
-typedef struct {
+typedef struct Map_u {
     StaticBody_t ground ;
     SDL_Texture * background ;
+    StaticBody_t * listObject ;
 } Map_t ;
 
 

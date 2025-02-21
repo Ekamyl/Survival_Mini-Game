@@ -6,7 +6,7 @@
 #define CAMERA_WIDTH 1080 
 #define CAMERA_HEIGHT 720
 
-typedef struct {
+typedef struct Camera_u {
     float x, y;
     float width, height;
     float deadzone;

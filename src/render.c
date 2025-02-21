@@ -4,6 +4,7 @@
 #include "../include/map.h"
 #include "../include/camera.h"
 #include "../include/player.h"
+#include "../include/render.h"
 
 
 void draw_map (Map_t * map, Camera_t * camera) {

@@ -1,19 +1,19 @@
 #pragma once 
 
 
-typedef struct {
+typedef struct Rectangle_u {
     float x, y;
     float width, height;
 } Rectangle_t ;
 
-typedef struct {
+typedef struct RigidBody_u {
     Rectangle_t rec;
     float vx, vy;           // velocité 
     float jump;             // valeur de saut 
     int onGround;           // si au sol  
 } RigidBody_t ;
 
-typedef struct {
+typedef struct StaticBody_u {
     Rectangle_t rec;
 } StaticBody_t ;
 

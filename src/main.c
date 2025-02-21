@@ -5,6 +5,7 @@
 #include "../include/map.h"
 #include "../include/camera.h"
 #include "../include/render.h"
+#include "../include/scene.h"
 
 
 int init_systeme ();
@@ -53,105 +54,33 @@ int main(int argc, char* argv[]) {
         terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
+
+    // creation liste objets 
+    // StaticBody_t * listObject = listObject_constructor(gameStatus.scene);
     
     // variable pour l'affichage du nombre de FPS 
     uint32_t previousTime = SDL_GetTicks(); // to print fps every second 
-    int nbFrame = 0; 
-    int updateCount = 0;
     
     // Variable to keep track of the time elapsed during the actual frame rendering 
     uint32_t timerStart; 
     uint32_t timerDelay; 
-
-    int signalAh = 0;
-    int signalSnore = 0;
-    int signalSpider = 0;
     
     // Boucle principale
-    SDL_Event event;
     while (gameStatus.running) {
 
         timerStart = SDL_GetTicks();
-        updateCount++;
-        gameStatus.frameCount++;
-
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                gameStatus.running = FALSE;
-            }
-            else if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                    case SDLK_q :
-                        break;
-                    case SDLK_d :
-                        break;
-                    case SDLK_SPACE :
-                        break;
-                    case SDLK_BACKSPACE : 
-                        gameStatus.running = FALSE;
-                    default :
-                        break;
-                }
-            }
-        }
-
-        const uint8_t * keys = SDL_GetKeyboardState(NULL);
-        handle_input(keys, player);
-
-        // Effacer l'écran
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear (renderer); 
-
-        // met a jour la position des objets dynamique 
-        update_player(player, &map->ground);
-        update_camera(camera, player);
-
-        // dessine le rendu 
-        if (draw (camera, player, map)) {
-            gameStatus.running = 0;
-        }
-
-        // Mettre à jour l'écran
-        SDL_RenderPresent (renderer);
-
         
-        if (updateCount == 5) {
-            updateCount = 0;
-            update_player_anim_state (player);
-        }        
-
-
-        if (signalAh) {
-            if (!Mix_Playing(0)) {
-                Mix_PlayChannel(0, music, 0);
-                Mix_Volume(0, 25);
-            }
-            signalAh = 0;
-        }
-        if (signalSpider) {
-            if (!Mix_Playing(1)) {
-                Mix_PlayChannel(1, spidermanSound, 0);
-                Mix_Volume(1, 25);
-            }
-            signalSpider = 0;
-        }
-        if (signalSnore) {
-            if (!Mix_Playing(2)) {
-                Mix_PlayChannel(2, snoreSound, 0);
-                Mix_Volume(2, 25);
-            }
-            signalSnore = 0;
-        }
-
+        // joue la scene en cours
+        gameStatus.playScene[gameStatus.scene](camera, player, map);   
 
         // print fps 
+        gameStatus.frameCount++;
         uint32_t time = SDL_GetTicks();
         if (time - previousTime > 1000) {
             previousTime = time;
             printf("FPS : %d\n", gameStatus.frameCount);
             gameStatus.frameCount = 0;
         }
-
 
         // block program at 60fps 
         timerDelay = SDL_GetTicks() - timerStart;
@@ -246,7 +175,7 @@ int init_systeme () {
     }
 
 
-    // genere les 2 texture de bruit 
+    // genere la texture de bruit visuel 
     if (generate_noise_texture(WINDOW_WIDTH, WINDOW_HEIGHT)) {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -260,7 +189,26 @@ int init_systeme () {
 
     
     gameStatus.running = TRUE;
-    gameStatus.level = 0;
+    gameStatus.scene = 0;
+    gameStatus.frameCount = 0;
+    gameStatus.updateCount = 0;
+    
+    // alloue memoire pour deux scene 
+    gameStatus.playScene = malloc(sizeof(int (*)(Camera_t *, Player_t *, Map_t *)) * 2);
+    if (gameStatus.playScene == NULL) {
+        printf("Erreur malloc gameStatus.playScene : %s\n", SDL_GetError()); 
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        destroy_noise_texture();
+        Mix_CloseAudio();
+        Mix_Quit();
+        TTF_Quit();
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    gameStatus.playScene[0] = play_scene0;
+    gameStatus.playScene[1] = play_scene1;
 
     return 0;
 }
@@ -270,6 +218,8 @@ void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * 
     
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    free(gameStatus.playScene); 
+    gameStatus.playScene = NULL;
     if (music) {
         Mix_FreeChunk(music);
     }

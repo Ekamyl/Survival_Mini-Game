@@ -7,10 +7,15 @@
 #define FPS 60
 #define FRAME_DELAY (1000 / FPS)
 
+typedef struct Camera_u Camera_t ;
+typedef struct Player_u Player_t ;
+typedef struct Map_u Map_t ;
+
 typedef struct {
     int running ; 
-    int level ;
-    int glitchedScreen ; 
     int frameCount ;
-    SDL_KeyCode keyPressed ;
+    int updateCount ;
+    int scene ;
+
+    int (*(*playScene)) (Camera_t *, Player_t *, Map_t *);
 } GameStatus_t ; 
