@@ -9,6 +9,8 @@
 
 typedef struct {
     int running ; 
-    int level ; 
+    int level ;
+    int glitchedScreen ; 
+    int frameCount ;
     SDL_KeyCode keyPressed ;
 } GameStatus_t ; 

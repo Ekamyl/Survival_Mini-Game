@@ -31,15 +31,3 @@ void map_destructor (Map_t ** map) {
     free(*map);
     *map = NULL;
 }
-
-void draw_map (Map_t * map, Camera_t * camera) {
-    SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
-    if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
-    
-    Rectangle_t rec = map->ground.rec;
-    SDL_Rect dstrect = {rec.x, rec.y, rec.width, rec.height}; // pour dessiner la zone de collision du sol 
-    // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    // SDL_RenderFillRect(renderer, &dstrect);
-
-    SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
-}

@@ -3,7 +3,9 @@
 
 #include "physics.h"
 #include "window.h"
-#include "camera.h"
+
+extern GameStatus_t gameStatus ;
+
 
 #define PLAYER_WIDTH 150 
 #define PLAYER_HEIGHT 150 
@@ -15,8 +17,6 @@
 #define NB_RUN_ANIM 10
 #define NB_JUMP_ANIM 10
 #define NB_WALK_ANIM 10
-
-extern SDL_Renderer * renderer ;
 
 typedef enum {IDLE, JUMP, RUN, WALK} ActionState_t ;
 
@@ -32,7 +32,6 @@ typedef struct Player_u {
 
 Player_t * player_constructor ();
 void player_destructor (Player_t ** player);
-void draw_player (Player_t * player, Camera_t * camera);
 void update_player (Player_t * player, StaticBody_t * ground);
 void handle_input (const uint8_t * keys, Player_t * player);
 void update_player_anim_state (Player_t * player);

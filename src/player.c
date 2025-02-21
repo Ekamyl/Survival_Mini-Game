@@ -22,9 +22,9 @@ Player_t * player_constructor () {
     player->body.jump = 0; 
     player->body.onGround = FALSE;
 
-    player->acceleration = 0.2; 
-    player->deceleration = 0.5;
-    player->vMax = 7;
+    player->acceleration = 1; 
+    player->deceleration = 0.3;
+    player->vMax = 8;
 
     player->texture = load_png("assets/playerSpriteSheet.png");
     if (player->texture == NULL) {
@@ -64,40 +64,6 @@ void update_player_anim_state (Player_t * player) {
 }
 
 
-static SDL_RendererFlip flip ;
-void draw_player (Player_t * player, Camera_t * camera) {
-    if (player->body.vx > 0) {
-        flip = SDL_FLIP_NONE;
-        if (player->body.vx == player->vMax)
-            player->actionState = RUN;
-        else 
-            player->actionState = WALK;
-    }
-    else if (player->body.vx < 0) {
-        flip = SDL_FLIP_HORIZONTAL;
-        if (player->body.vx == -player->vMax)
-            player->actionState = RUN;
-        else 
-            player->actionState = WALK;
-    }
-    else {
-        player->actionState = IDLE;
-        if (player->animState >= NB_IDLE_ANIM) 
-            player->animState = 0;
-    }
-
-    Rectangle_t rec = player->body.rec;
-    SDL_Rect dstrect = {rec.x - camera->x, rec.y, rec.width, rec.height};
-    SDL_Rect srcrect = {PLAYER_SPRITE_WIDTH * player->animState + 20, PLAYER_SPRITE_HEIGHT * player->actionState, PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_HEIGHT};
-
-
-    SDL_RenderCopyEx(renderer, player->texture, &srcrect, &dstrect, 0, NULL, flip);
-
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_RenderDrawRect(renderer, &dstrect);
-}
-
-
 void update_player (Player_t * player, StaticBody_t * ground) {
     // gere la hauteur du personnage en fonction du saut
     if (!player->body.onGround) {
@@ -113,6 +79,8 @@ void update_player (Player_t * player, StaticBody_t * ground) {
 
     // gere la position x 
     update_position(&player->body);
+    
+    // replace le player pour ne pas sortir de la map 
     if (player->body.rec.x < 0) player->body.rec.x = 0;
     if ((player->body.rec.x + player->body.rec.width) > BACKGROUND_WIDTH) player->body.rec.x = BACKGROUND_WIDTH - player->body.rec.width;
 
@@ -122,16 +90,16 @@ void update_player (Player_t * player, StaticBody_t * ground) {
 
 void handle_input (const uint8_t * keys, Player_t * player) {
     if (keys[SDL_SCANCODE_D] && !keys[SDL_SCANCODE_A]) {
-        if (player->body.vx < 0) 
-            player->body.vx = -player->body.vx;
+        // if (player->body.vx < 0 && (player->body.vx == player->vMax)) 
+        //     player->body.vx = -player->body.vx;
 
         player->body.vx += player->acceleration ;
         if (player->body.vx > player->vMax) 
             player->body.vx = player->vMax;
     }
     else if (keys[SDL_SCANCODE_A] && !keys[SDL_SCANCODE_D]) {
-        if (player->body.vx > 0) 
-            player->body.vx = -player->body.vx;
+        // if (player->body.vx > 0 && (player->body.vx == player->vMax)) 
+        //     player->body.vx = -player->body.vx;
         
         player->body.vx -= player->acceleration ;
         if (player->body.vx < -player->vMax) 

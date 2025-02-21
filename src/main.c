@@ -4,10 +4,11 @@
 #include "../include/player.h"
 #include "../include/map.h"
 #include "../include/camera.h"
+#include "../include/render.h"
 
 
 int init_systeme ();
-void terminate_system (SDL_Renderer * renderer, SDL_Window * window, Mix_Music * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera);
+void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera);
 void handle_input (const uint8_t * keys, Player_t * player);
 
 SDL_Window * window ; 
@@ -22,30 +23,34 @@ int main(int argc, char* argv[]) {
 
 
     // charge music 
-    Mix_Music * music = Mix_LoadMUS("music/ah_shit_here_we_go_again.ogg");
+    Mix_Chunk * music = Mix_LoadWAV("music/ah_shit_here_we_go_again.ogg");
     if (music == NULL) {
         printf("Erreur de chargement music \"%s\": %s\n", "music/ah_shit_here_we_go_again.mp3", SDL_GetError());
-        terminate_system(renderer, window, NULL, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
+        terminate_system(NULL, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
+    Mix_Chunk * snoreSound = Mix_LoadWAV("music/snore-mimimimimimi.ogg");
+    Mix_Chunk * spidermanSound = Mix_LoadWAV("music/spiderman-meme-song.ogg");
 
+    Mix_AllocateChannels(16);
+    
 
     // creer personnage 
     Player_t * player = player_constructor();
     if (player == NULL) {
-        terminate_system(renderer, window, music, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
+        terminate_system(music, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
 
     Map_t * map = map_constructor();
     if (map == NULL) {
-        terminate_system(renderer, window, music, TRUE, player, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
+        terminate_system(music, TRUE, player, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
 
     Camera_t * camera = camera_constructor (player);
     if (camera == NULL) {
-        terminate_system(renderer, window, music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
+        terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
     
@@ -58,19 +63,35 @@ int main(int argc, char* argv[]) {
     uint32_t timerStart; 
     uint32_t timerDelay; 
 
-    int signal = 0;
+    int signalAh = 0;
+    int signalSnore = 0;
+    int signalSpider = 0;
     
     // Boucle principale
     SDL_Event event;
     while (gameStatus.running) {
 
         timerStart = SDL_GetTicks();
-        nbFrame++;
         updateCount++;
+        gameStatus.frameCount++;
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 gameStatus.running = FALSE;
+            }
+            else if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_q :
+                        break;
+                    case SDLK_d :
+                        break;
+                    case SDLK_SPACE :
+                        break;
+                    case SDLK_BACKSPACE : 
+                        gameStatus.running = FALSE;
+                    default :
+                        break;
+                }
             }
         }
 
@@ -81,10 +102,14 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear (renderer); 
 
+        // met a jour la position des objets dynamique 
         update_player(player, &map->ground);
         update_camera(camera, player);
-        draw_map(map, camera);
-        draw_player(player, camera);
+
+        // dessine le rendu 
+        if (draw (camera, player, map)) {
+            gameStatus.running = 0;
+        }
 
         // Mettre à jour l'écran
         SDL_RenderPresent (renderer);
@@ -96,13 +121,36 @@ int main(int argc, char* argv[]) {
         }        
 
 
+        if (signalAh) {
+            if (!Mix_Playing(0)) {
+                Mix_PlayChannel(0, music, 0);
+                Mix_Volume(0, 25);
+            }
+            signalAh = 0;
+        }
+        if (signalSpider) {
+            if (!Mix_Playing(1)) {
+                Mix_PlayChannel(1, spidermanSound, 0);
+                Mix_Volume(1, 25);
+            }
+            signalSpider = 0;
+        }
+        if (signalSnore) {
+            if (!Mix_Playing(2)) {
+                Mix_PlayChannel(2, snoreSound, 0);
+                Mix_Volume(2, 25);
+            }
+            signalSnore = 0;
+        }
+
+
         // print fps 
-        // uint32_t time = SDL_GetTicks();
-        // if (time - previousTime > 1000) {
-        //     previousTime = time;
-        //     printf("FPS : %d\n", nbFrame);
-        //     nbFrame = 0;
-        // }
+        uint32_t time = SDL_GetTicks();
+        if (time - previousTime > 1000) {
+            previousTime = time;
+            printf("FPS : %d\n", gameStatus.frameCount);
+            gameStatus.frameCount = 0;
+        }
 
 
         // block program at 60fps 
@@ -114,7 +162,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Nettoyage
-    terminate_system(renderer, window, music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, camera);
+    terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, camera);
+    Mix_FreeChunk(snoreSound);
+    Mix_FreeChunk(spidermanSound);
 
     return 0;
 }
@@ -122,6 +172,9 @@ int main(int argc, char* argv[]) {
 
 // initialise les variables globales du systeme et les differentes librairies 
 int init_systeme () {
+
+    srand(time(NULL));
+
     // Initialisation de SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         printf("Erreur d'initialisation de SDL: %s\n", SDL_GetError());
@@ -192,6 +245,19 @@ int init_systeme () {
         return 1;
     }
 
+
+    // genere les 2 texture de bruit 
+    if (generate_noise_texture(WINDOW_WIDTH, WINDOW_HEIGHT)) {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        Mix_CloseAudio();
+        Mix_Quit();
+        TTF_Quit();
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
     
     gameStatus.running = TRUE;
     gameStatus.level = 0;
@@ -200,16 +266,12 @@ int init_systeme () {
 }
 
 
-void terminate_system (SDL_Renderer * renderer, SDL_Window * window, Mix_Music * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera) {
+void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera) {
     
-    if (renderer) {
-        SDL_DestroyRenderer(renderer);
-    }
-    if (window) {
-        SDL_DestroyWindow(window);
-    }
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
     if (music) {
-        Mix_FreeMusic(music);
+        Mix_FreeChunk(music);
     }
     if (audio) {
         Mix_CloseAudio();
@@ -235,4 +297,6 @@ void terminate_system (SDL_Renderer * renderer, SDL_Window * window, Mix_Music *
     if (camera) {
         camera_destructor(&camera);
     }
+    destroy_noise_texture();
+
 }
