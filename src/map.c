@@ -13,11 +13,11 @@ Map_t * map_constructor () {
     }
     
     map->ground.rec.x = 0; 
-    map->ground.rec.y = WINDOW_HEIGHT / 4 * 3;
+    map->ground.rec.y = (WINDOW_HEIGHT / 4) * 3;
     map->ground.rec.width = GROUND_WIDTH;
     map->ground.rec.height = GROUND_HEIGHT;
 
-    map->background = load_png("assets/background.png");
+    map->background = load_png("assets/background_grey.png");
     if (map->background == NULL) {
         return NULL;
     }

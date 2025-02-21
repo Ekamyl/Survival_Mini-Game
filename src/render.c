@@ -10,20 +10,29 @@ void draw_map (Map_t * map, Camera_t * camera) {
     SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
     if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
     
-    Rectangle_t rec = map->ground.rec;
-    SDL_Rect dstrect = {rec.x, rec.y, rec.width, rec.height}; // pour dessiner la zone de collision du sol 
-    
-    // dessine la zone de collision du sol 
-    // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    // SDL_RenderFillRect(renderer, &dstrect);
-
     SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
+
+    // dessine la zone de collision du sol 
+    // SDL_Rect dstrect = {0, map->ground.rec.y, WINDOW_WIDTH, map->ground.rec.height}; 
+    
+    // SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+    // SDL_RenderFillRect(renderer, &dstrect);
 }
 
 
 static SDL_RendererFlip flip ;
 void draw_player (Player_t * player, Camera_t * camera) {
-    if (player->body.vx > 0) {
+
+    // definie l'action que fait le personnage (courir, marcher, sur place, sauter)
+    if (player->body.onGround == FALSE) {
+        // definie l'anim state pour connaitre le sprite d'animation de saut a affiché
+        player->animState = player->body.jump > 0 ? (JUMP_FORCE - player->body.jump) / (JUMP_FORCE / NB_JUMP_ANIM) : NB_JUMP_ANIM - 1 ;
+        player->actionState = JUMP;
+
+        if (player->body.vx < 0) flip = SDL_FLIP_HORIZONTAL;
+        else flip = SDL_FLIP_NONE ;
+    }
+    else if (player->body.vx > 0) {
         flip = SDL_FLIP_NONE;
         if (player->body.vx == player->vMax)
             player->actionState = RUN;
@@ -51,8 +60,8 @@ void draw_player (Player_t * player, Camera_t * camera) {
     SDL_RenderCopyEx(renderer, player->texture, &srcrect, &dstrect, 0, NULL, flip);
 
     // dessine la zone de collision du player 
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_RenderDrawRect(renderer, &dstrect);
+    // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    // SDL_RenderDrawRect(renderer, &dstrect);
 }
 
 
@@ -146,7 +155,7 @@ int draw (Camera_t * camera, Player_t * player, Map_t * map) {
         draw_player (player, camera);
         
         // applique un effet de glitch sur l'ecran
-        if (gameStatus.frameCount > (rand() % 60)) {
+        if (rand() % 3 == 0) {
             apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
         }
 

@@ -23,5 +23,6 @@ void ground_collision (RigidBody_t * object, StaticBody_t * ground) {
         object->rec.y = ground->rec.y - object->rec.width;
         object->vy = 0;
         object->onGround = TRUE;
+        object->jump = 0;
     }
 }

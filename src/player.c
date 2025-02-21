@@ -16,7 +16,7 @@ Player_t * player_constructor () {
     player->body.rec.width = PLAYER_WIDTH;
     player->body.rec.height = PLAYER_HEIGHT;
     player->body.rec.x = WINDOW_WIDTH / 2;
-    player->body.rec.y = WINDOW_HEIGHT / 2;
+    player->body.rec.y = WINDOW_HEIGHT / 2 - 200;
     player->body.vx = 0;
     player->body.vy = 0;
     player->body.jump = 0; 
@@ -26,7 +26,7 @@ Player_t * player_constructor () {
     player->deceleration = 0.3;
     player->vMax = 8;
 
-    player->texture = load_png("assets/playerSpriteSheet.png");
+    player->texture = load_png("assets/playerSpriteSheet_black.png");
     if (player->texture == NULL) {
         return NULL;
     }
@@ -45,6 +45,11 @@ void player_destructor (Player_t ** player) {
 }
 
 
+/* Incremente anim state pour afficher le sprite suivant de l'animation 
+ * N'effectue pas de changement lorsque le player est en phase de saut car cette fonction est basée sur le temps
+ * or le saut change de frame d'animation en fonction de sa position dans les airs non pas le temps passée.
+ * Le changement d'anim_state durant le saut est traité par la fonction draw_player().
+ */ 
 void update_player_anim_state (Player_t * player) {
     switch (player->actionState) {
     case IDLE :
@@ -53,9 +58,6 @@ void update_player_anim_state (Player_t * player) {
     case RUN :
         player->animState = (player->animState + 1) % NB_RUN_ANIM;
         break;
-    case JUMP : 
-        player->animState = (player->animState + 1) % NB_JUMP_ANIM;
-        break; 
     case WALK :
         player->animState = (player->animState + 1) % NB_WALK_ANIM;
     default:
@@ -67,13 +69,17 @@ void update_player_anim_state (Player_t * player) {
 void update_player (Player_t * player, StaticBody_t * ground) {
     // gere la hauteur du personnage en fonction du saut
     if (!player->body.onGround) {
-        if (player->body.jump > 0) {
+        if (player->body.jump > (JUMP_FORCE / 2)) {
             player->body.jump -= 5;
             player->body.vy = -5;
         }
+        else if (player->body.jump > 0) {
+            player->body.jump -= 5;
+            player->body.vy = 5;
+        }
         else {
             player->body.jump = 0;
-            player->body.vy = 2;
+            player->body.vy = 5;
         }
     }
 
@@ -118,7 +124,7 @@ void handle_input (const uint8_t * keys, Player_t * player) {
         }
     }
     if (keys[SDL_SCANCODE_SPACE] && player->body.onGround == TRUE) {
-        player->body.jump = player->body.rec.height;
+        player->body.jump = JUMP_FORCE;
         player->body.onGround = FALSE;
     }
 }

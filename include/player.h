@@ -13,6 +13,8 @@ extern GameStatus_t gameStatus ;
 #define PLAYER_SPRITE_WIDTH 128
 #define PLAYER_SPRITE_HEIGHT 80
 
+#define JUMP_FORCE (PLAYER_HEIGHT * 2)
+
 #define NB_IDLE_ANIM 7
 #define NB_RUN_ANIM 10
 #define NB_JUMP_ANIM 10
