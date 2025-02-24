@@ -1,0 +1,4 @@
+change le type de la map pour la scene 0 : 
+- rajoute un type desktop qui serviras aux ecrans d'accueils des ordis 
+
+enleve les fonctions inutile du map.c

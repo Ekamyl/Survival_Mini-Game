@@ -38,17 +38,24 @@ void draw_background (Map_t * map, Camera_t * camera) {
 
 
 /**
- * Pour afficher les objets relativement a la fenetre et non pas a la camera, passée NULL a camera.
+ * Pour afficher les elements relativement a la fenetre et non pas a la camera, passée NULL a camera.
  */
-void draw_listObjects (Map_t * map, Camera_t * camera) {
+void draw_listElementss (Map_t * map, Camera_t * camera) {
     
     // affiche relativement a la fenetre 
     if (camera == NULL) {
         for (int i = 0; i < map->nbObject; i++) {
+            // affiche l'element si il est visible
+            if (map->listElements[i].hidden == FALSE) {
+                SDL_RenderCopy(renderer, map->objectsTexture, &map->listElements[i].srcrect, &map->listElements[i].position);
 
-            // si l'objet n'est pas NULL, alors il est visible et il sera rendu a l'ecran
-            if (!rect_is_null(map->listObject[i].position));
-                SDL_RenderCopy(renderer, map->objectsTexture, &map->listObject[i].srcrect, &map->listObject[i].position);
+                if (map->listElements[i].clicked == TRUE) {
+                    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                    SDL_SetRenderDrawColor(renderer, 231, 244, 244, 100);
+
+                    SDL_RenderFillRect(renderer, &map->listElements[i].position);
+                }
+            }
         }
 
         return;
@@ -58,10 +65,10 @@ void draw_listObjects (Map_t * map, Camera_t * camera) {
     // affiche relativement a la camera 
     for (int i = 0; i < map->nbObject; i++) {
 
-        // si l'objet n'est pas NULL, alors il est visible et il sera rendu a l'ecran
-        if (1) {
-            SDL_Rect dstrect = {map->listObject[i].position.x - camera->x, map->listObject[i].position.y - camera->y, map->listObject[i].position.w, map->listObject[i].position.h};
-            SDL_RenderCopy(renderer, map->objectsTexture, &map->listObject[i].srcrect, &dstrect);
+        // affiche l'element si il est visible
+        if (map->listElements[i].hidden == FALSE) {
+            SDL_Rect dstrect = {map->listElements[i].position.x - camera->x, map->listElements[i].position.y - camera->y, map->listElements[i].position.w, map->listElements[i].position.h};
+            SDL_RenderCopy(renderer, map->objectsTexture, &map->listElements[i].srcrect, &dstrect);
         }
     }
 }
@@ -192,7 +199,7 @@ void draw_scene0 (Camera_t * camera, Map_t * map) {
     if (rand() % 10 > 8) 
         draw_background(map, camera);
     
-    draw_listObjects(map, NULL);
+    draw_listElementss(map, NULL);
 }
 
 
@@ -207,6 +214,8 @@ int draw (Camera_t * camera, Player_t * player, Map_t * map) {
         case 1 : 
             draw_map(map, camera);
             draw_player(player, camera);
+            if (rand() % 10 > 6)
+                apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
             break;
         default : 
             break;

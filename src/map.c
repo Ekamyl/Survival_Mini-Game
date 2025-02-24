@@ -12,7 +12,7 @@ void set_rect_null (SDL_Rect * rect) {
     rect->x = -1; 
     rect->y = -1; 
     rect->w = -1; 
-    rect->h = -1; 
+    rect->h = -1;  
 }
 
 Rectangle_t return_null () {
@@ -32,13 +32,17 @@ Rectangle_t return_ground () {
     return ground;
 }
 
+void init_elements_scene0 (Map_t * map){
+    map->listElements[ERROR_WINDOW].hidden = TRUE;
+}
+
 /**
  * Renvoi la liste des Objet_t de la scene actuel. 
  * Recupere les donnes des Objet_t dans un fichier .txt
  */
-Objet_t * load_objects(int nbObject) {
+DesktopElement_t * load_elements(int nbObject) {
     
-    Objet_t * list = malloc(sizeof(Objet_t) * nbObject);
+    DesktopElement_t * list = malloc(sizeof(DesktopElement_t) * nbObject);
 
     char fileName[128];
     sprintf(fileName, "assets/donneesObjectScene%d.txt", gameStatus.scene);
@@ -57,13 +61,17 @@ Objet_t * load_objects(int nbObject) {
         list[i].srcrect.y = y;
         list[i].srcrect.w = w;
         list[i].srcrect.h = h;
+
+        list[i].hidden = FALSE;
+        list[i].clicked = FALSE;
+        list[i].dragged = FALSE;
         
         printf("x = %d; y = %d; w = %d; h = %d\n", list[i].srcrect.x, list[i].srcrect.y, list[i].srcrect.w, list[i].srcrect.h = h);
     }
 
     
     printf("dstrect du fichier %s :\n", fileName);
-    for (int i = i; i < nbObject; i++) {
+    for (int i = 0; i < nbObject; i++) {
         fscanf(file, "{%d, %d, %d, %d}", &x, &y, &w, &h);
         fgets(buffer, sizeof(buffer), file);
 
@@ -98,7 +106,7 @@ Map_t * map_constructor () {
 
     // alloue de la memoire pour le tableau d'objets present sur la map 
     map->nbObject = 8;
-    map->listObject = load_objects(map->nbObject);
+    map->listElements = load_elements(map->nbObject);
 
     // // charge texture objet 
     map->objectsTexture = load_png("assets/spritesheetScene0.png");
@@ -111,8 +119,8 @@ void map_destructor (Map_t ** map) {
     SDL_DestroyTexture((*map)->background);
     SDL_DestroyTexture((*map)->objectsTexture);
     
-    free((*map)->listObject);
-    (*map)->listObject = NULL;
+    free((*map)->listElements);
+    (*map)->listElements = NULL;
     free(*map);
     *map = NULL;
 }

@@ -54,4 +54,7 @@ exe:
 debug:
 	$(MAKE) DEBUG=1
 
+apple : 
+	gcc src/*.c -o bin/introGame -F/Library/Frameworks -framework SDL2 -framework SDL2_image -framework SDL2_ttf -framework SDL2_mixer -Wl,-rpath,/Library/Frameworks
+
 .PHONY: all clean exe debug

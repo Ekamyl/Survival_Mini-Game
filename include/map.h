@@ -21,10 +21,13 @@ extern GameStatus_t gameStatus ;
 #define RIGHT_BORDER 6
 #define BOTTOM_BORDER 7
 
-typedef struct Objet_u {
+typedef struct DesktopElement_u {
     SDL_Rect srcrect ;
     SDL_Rect position ;
-} Objet_t ;
+    int hidden ;        // TRUE or FALSE 
+    int clicked ;       // TRUE or FALSE 
+    int dragged ;       // TRUE or FALSE 
+} DesktopElement_t ; 
 
 typedef struct Map_u {
     SDL_Texture * background ;
@@ -32,13 +35,14 @@ typedef struct Map_u {
     Rectangle_t ground ;
     
     SDL_Texture * objectsTexture ;
-    Objet_t * listObject ;
+    DesktopElement_t * listElements ;
     int nbObject;
 } Map_t ;
 
 
-StaticBody_t constructor_listObject (int numScene);
+DesktopElement_t * load_elements(int nbObject);
 Map_t * map_constructor () ;
 void map_destructor (Map_t ** map) ;
 void set_rect_null (SDL_Rect * rect) ;
 int rect_is_null (SDL_Rect rect) ;
+void init_elements_scene0 (Map_t * map);

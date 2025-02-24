@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
         terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
+
+    init_scene(camera, player, map);
     
     // variable pour l'affichage du nombre de FPS 
     uint32_t previousTime = SDL_GetTicks(); // to print fps every second 
