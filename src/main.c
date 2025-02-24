@@ -10,7 +10,9 @@
 
 int init_systeme ();
 void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera);
-void handle_input (const uint8_t * keys, Player_t * player);
+void print_fps (uint32_t * previousTime);
+void start_frame (uint32_t * timerStart);
+void end_frame (uint32_t * timerStart, uint32_t * previousTime);
 
 SDL_Window * window ; 
 SDL_Renderer * renderer ; 
@@ -54,9 +56,6 @@ int main(int argc, char* argv[]) {
         terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
-
-    // creation liste objets 
-    // StaticBody_t * listObject = listObject_constructor(gameStatus.scene);
     
     // variable pour l'affichage du nombre de FPS 
     uint32_t previousTime = SDL_GetTicks(); // to print fps every second 
@@ -68,34 +67,50 @@ int main(int argc, char* argv[]) {
     // Boucle principale
     while (gameStatus.running) {
 
-        timerStart = SDL_GetTicks();
+        // traitement debut frame 
+        start_frame(&timerStart);
         
         // joue la scene en cours
-        gameStatus.playScene[gameStatus.scene](camera, player, map);   
+        gameStatus.playScene[gameStatus.scene](camera, player, map);
 
-        // print fps 
-        gameStatus.frameCount++;
-        uint32_t time = SDL_GetTicks();
-        if (time - previousTime > 1000) {
-            previousTime = time;
-            printf("FPS : %d\n", gameStatus.frameCount);
-            gameStatus.frameCount = 0;
-        }
-
-        // block program at 60fps 
-        timerDelay = SDL_GetTicks() - timerStart;
-        if (timerDelay < FRAME_DELAY) {
-            SDL_Delay(FRAME_DELAY - timerDelay);
-        }
-
+        // traitement fin frame  
+        end_frame(&timerStart, &previousTime);
     }
 
     // Nettoyage
-    terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, camera);
     Mix_FreeChunk(snoreSound);
     Mix_FreeChunk(spidermanSound);
+    terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, camera);
 
     return 0;
+}
+
+
+void start_frame (uint32_t * timerStart) {
+    *timerStart = SDL_GetTicks();
+}
+
+
+void end_frame (uint32_t * timerStart, uint32_t * previousTime) {
+
+    print_fps(previousTime);
+
+    gameStatus.frameCount++;
+
+    uint32_t timerDelay = SDL_GetTicks() - *timerStart;
+    if (timerDelay < FRAME_DELAY) {
+        SDL_Delay(FRAME_DELAY - timerDelay);
+    }
+}
+
+
+void print_fps (uint32_t * previousTime) {
+    uint32_t time = SDL_GetTicks();
+    if (time - *previousTime > 1000) {
+        *previousTime = time;
+        printf("FPS : %d\n", gameStatus.frameCount);
+        gameStatus.frameCount = 0;
+    }
 }
 
 
@@ -206,7 +221,7 @@ int init_systeme () {
         IMG_Quit();
         SDL_Quit();
         return 1;
-    }
+    } 
     gameStatus.playScene[0] = play_scene0;
     gameStatus.playScene[1] = play_scene1;
 
@@ -215,7 +230,7 @@ int init_systeme () {
 
 
 void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera) {
-    
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     free(gameStatus.playScene); 

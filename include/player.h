@@ -24,9 +24,10 @@ typedef enum {IDLE, JUMP, RUN, WALK} ActionState_t ;
 
 typedef struct Player_u {
     RigidBody_t body ;
+    
     float acceleration, deceleration ;
     float vMax ;
-    SDL_Texture * texture ;
+
     ActionState_t actionState ;
     int animState ;
 } Player_t ;
@@ -34,6 +35,6 @@ typedef struct Player_u {
 
 Player_t * player_constructor ();
 void player_destructor (Player_t ** player);
-void update_player (Player_t * player, StaticBody_t * ground);
+void update_player (Player_t * player, Rectangle_t * ground);
 void handle_input (const uint8_t * keys, Player_t * player);
 void update_player_anim_state (Player_t * player);

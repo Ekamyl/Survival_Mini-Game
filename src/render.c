@@ -7,17 +7,63 @@
 #include "../include/render.h"
 
 
+
+
+/**
+ * 
+ */
 void draw_map (Map_t * map, Camera_t * camera) {
     SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
     if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
     
     SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
 
+
     // dessine la zone de collision du sol 
     // SDL_Rect dstrect = {0, map->ground.rec.y, WINDOW_WIDTH, map->ground.rec.height}; 
     
     // SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
     // SDL_RenderFillRect(renderer, &dstrect);
+}
+
+
+void draw_background (Map_t * map, Camera_t * camera) {
+    // defini la partie de la texture a afficher
+    SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
+    if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
+    
+    // affiche la texture du background sur toute la fenetre
+    SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
+}
+
+
+/**
+ * Pour afficher les objets relativement a la fenetre et non pas a la camera, passée NULL a camera.
+ */
+void draw_listObjects (Map_t * map, Camera_t * camera) {
+    
+    // affiche relativement a la fenetre 
+    if (camera == NULL) {
+        for (int i = 0; i < map->nbObject; i++) {
+
+            // si l'objet n'est pas NULL, alors il est visible et il sera rendu a l'ecran
+            if (!rect_is_null(map->listObject[i].position));
+                SDL_RenderCopy(renderer, map->objectsTexture, &map->listObject[i].srcrect, &map->listObject[i].position);
+        }
+
+        return;
+    }
+
+
+    // affiche relativement a la camera 
+    for (int i = 0; i < map->nbObject; i++) {
+
+        // si l'objet n'est pas NULL, alors il est visible et il sera rendu a l'ecran
+        if (1) {
+            SDL_Rect dstrect = {map->listObject[i].position.x - camera->x, map->listObject[i].position.y - camera->y, map->listObject[i].position.w, map->listObject[i].position.h};
+            SDL_RenderCopy(renderer, map->objectsTexture, &map->listObject[i].srcrect, &dstrect);
+        }
+    }
 }
 
 
@@ -54,11 +100,11 @@ void draw_player (Player_t * player, Camera_t * camera) {
     }
 
     Rectangle_t rec = player->body.rec;
-    SDL_Rect dstrect = {rec.x - camera->x, rec.y, rec.width, rec.height};
+    SDL_Rect dstrect = {rec.x - camera->x, rec.y - camera->y, rec.width, rec.height};
     SDL_Rect srcrect = {PLAYER_SPRITE_WIDTH * player->animState + 20, PLAYER_SPRITE_HEIGHT * player->actionState, PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_HEIGHT};
 
 
-    SDL_RenderCopyEx(renderer, player->texture, &srcrect, &dstrect, 0, NULL, flip);
+    SDL_RenderCopyEx(renderer, player->body.texture, &srcrect, &dstrect, 0, NULL, flip);
 
     // dessine la zone de collision du player 
     // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
@@ -142,34 +188,28 @@ void apply_glitch(Camera_t * camera, SDL_Texture *texture, int width, int height
 }
 
 
+void draw_scene0 (Camera_t * camera, Map_t * map) {
+    if (rand() % 10 > 8) 
+        draw_background(map, camera);
+    
+    draw_listObjects(map, NULL);
+}
+
+
 // affiche l'ecran 
 // retourne 1 en cas d'erreu ou 0 si aucune erreur 
 int draw (Camera_t * camera, Player_t * player, Map_t * map) {
     
-    // si player dans la zone de glitch, affiche glitch visuel  
-    if (player->body.rec.x > (BACKGROUND_WIDTH - camera->width / 2)) { 
-        
-        // render la map
-        draw_map(map, camera);
-        
-        // render le player 
-        draw_player (player, camera);
-        
-        // applique un effet de glitch sur l'ecran
-        if (rand() % 3 == 0) {
-            apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
-        }
-
-        // affiche un bruit visuel, ressemble a l'ecran gris des tv cathodique 
-        // SDL_Rect srcrect = {(WINDOW_WIDTH / 4) * (rand() % 4), (WINDOW_HEIGHT / 4) * (rand() % 4), WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4};
-        // SDL_RenderCopy(renderer, noiseTexture, &srcrect, NULL);
-    }
-    else {
-        // render la map
-        draw_map(map, camera);
-
-        // render le player 
-        draw_player (player, camera);
+    switch (gameStatus.scene) {
+        case 0 : 
+            draw_scene0(camera, map);
+            break;
+        case 1 : 
+            draw_map(map, camera);
+            draw_player(player, camera);
+            break;
+        default : 
+            break;
     }
 
     return 0;

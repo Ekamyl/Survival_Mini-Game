@@ -8,6 +8,7 @@ typedef struct Rectangle_u {
 
 typedef struct RigidBody_u {
     Rectangle_t rec;
+    SDL_Texture * texture;
     float vx, vy;           // velocité 
     float jump;             // valeur de saut 
     int onGround;           // si au sol  
@@ -15,9 +16,10 @@ typedef struct RigidBody_u {
 
 typedef struct StaticBody_u {
     Rectangle_t rec;
+    SDL_Texture * texture;
 } StaticBody_t ;
 
 
 void update_position (RigidBody_t * body);
 int check_collision (Rectangle_t * a, Rectangle_t * b);
-void ground_collision (RigidBody_t * object, StaticBody_t * ground);
+void ground_collision (RigidBody_t * object, Rectangle_t * ground);

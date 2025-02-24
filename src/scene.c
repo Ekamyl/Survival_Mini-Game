@@ -33,10 +33,12 @@ int play_scene0 (Camera_t * camera, Player_t * player, Map_t * map) {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN :
+                printf("Bouton presser\n");
                 buttonClicked = SDL_MOUSEBUTTONDOWN;
                 clicks = event.button.clicks;
                 break;
             case SDL_MOUSEBUTTONUP :
+                printf("Bouton lever\n");
                 buttonClicked = SDL_MOUSEBUTTONUP;
                 break;
         }
@@ -49,6 +51,7 @@ int play_scene0 (Camera_t * camera, Player_t * player, Map_t * map) {
     // position carre vert 
     int cubeSize = 150;
     SDL_Rect rect = {(camera->width / 2) - (cubeSize / 2), (camera->height / 2) - (cubeSize / 2), cubeSize, cubeSize};
+    SDL_Rect rect2 = {100, 100, cubeSize - 50, cubeSize - 50};
     
     // affiche carre vert en fonction de la position du curseur 
     SDL_Point mouse ;
@@ -65,13 +68,20 @@ int play_scene0 (Camera_t * camera, Player_t * player, Map_t * map) {
         SDL_RenderFillRect(renderer, &rect);
     }
 
+    SDL_SetRenderDrawColor(renderer, 100, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderFillRect(renderer, &rect2);
+
+    // affiche le background test 
+    draw(camera, player, map);
+
     // Mettre à jour l'écran
     SDL_RenderPresent (renderer);
 
+    // update position camera, se positionne sur un des 4 coins 
+    update_camera_random(camera);
+
     // recupere les touche presser 
     const uint8_t * keys = SDL_GetKeyboardState(NULL);
-
-
     if (keys[SDL_SCANCODE_SPACE]) {
         gameStatus.scene = 1;
     }
@@ -97,6 +107,13 @@ int play_scene1 (Camera_t * camera, Player_t * player, Map_t * map) {
                         break;
                     case SDLK_BACKSPACE : 
                         gameStatus.running = FALSE;
+                        break;
+                    case SDLK_f :
+                        camera->followPlayer = (camera->followPlayer + 1) % 2; printf("changement follow\n");
+                        break;
+                    case SDLK_i :
+                        printf("INFO :\nplayer x, y : %f %f\ncamera x, y : %f %f\n", player->body.rec.x, player->body.rec.y, camera->x, camera->y);
+                        break;
                     default :
                         break;
                 }

@@ -18,9 +18,9 @@ int check_collision(Rectangle_t * a, Rectangle_t * b) {
 }
 
 // si l'objet est en collision avec le sol, met a jour ses coordonnes 
-void ground_collision (RigidBody_t * object, StaticBody_t * ground) {
-    if (check_collision(&object->rec, &ground->rec)) {
-        object->rec.y = ground->rec.y - object->rec.width;
+void ground_collision (RigidBody_t * object, Rectangle_t * ground) {
+    if (check_collision(&object->rec, ground)) {
+        object->rec.y = ground->y - object->rec.width;
         object->vy = 0;
         object->onGround = TRUE;
         object->jump = 0;

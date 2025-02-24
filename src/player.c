@@ -26,8 +26,8 @@ Player_t * player_constructor () {
     player->deceleration = 0.3;
     player->vMax = 8;
 
-    player->texture = load_png("assets/playerSpriteSheet_grey.png");
-    if (player->texture == NULL) {
+    player->body.texture = load_png("assets/playerSpriteSheet_grey.png");
+    if (player->body.texture == NULL) {
         return NULL;
     }
 
@@ -39,7 +39,7 @@ Player_t * player_constructor () {
 
 
 void player_destructor (Player_t ** player) {
-    SDL_DestroyTexture((*player)->texture);
+    SDL_DestroyTexture((*player)->body.texture);
     free(*player);
     *player = NULL;
 }
@@ -66,7 +66,7 @@ void update_player_anim_state (Player_t * player) {
 }
 
 
-void update_player (Player_t * player, StaticBody_t * ground) {
+void update_player (Player_t * player, Rectangle_t * ground) {
     // gere la hauteur du personnage en fonction du saut
     if (!player->body.onGround) {
         if (player->body.jump > (JUMP_FORCE / 2)) {

@@ -10,8 +10,7 @@ extern SDL_Renderer * renderer ;
 extern GameStatus_t gameStatus ;
 
 
-void draw_player (Player_t * player, Camera_t * camera);
 void draw_map (Map_t * map, Camera_t * camera);
-int generate_noise_texture(int width, int height);
 int draw (Camera_t * camera, Player_t * player, Map_t * map);
+int generate_noise_texture(int width, int height);
 void destroy_noise_texture ();
