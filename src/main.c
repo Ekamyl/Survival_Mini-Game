@@ -6,6 +6,7 @@
 #include "../include/camera.h"
 #include "../include/render.h"
 #include "../include/scene.h"
+#include "../include/desktop.h"
 
 
 int init_systeme ();
@@ -190,20 +191,6 @@ int init_systeme () {
         SDL_Quit();
         return 1;
     }
-
-
-    // genere la texture de bruit visuel 
-    if (generate_noise_texture(WINDOW_WIDTH, WINDOW_HEIGHT)) {
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        Mix_CloseAudio();
-        Mix_Quit();
-        TTF_Quit();
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
     
     gameStatus.running = TRUE;
     gameStatus.scene = 0;
@@ -264,6 +251,5 @@ void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * 
     if (camera) {
         camera_destructor(&camera);
     }
-    destroy_noise_texture();
 
 }
