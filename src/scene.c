@@ -72,7 +72,6 @@ int element_update(Map_t * map, SDL_Event * event) {
  * 
  */
 void move_element (Map_t * map, SDL_Event * event) {
-    printf("Je suis la\n");
     for (int i = 0; i < map->nbObject; i++) {
         if (map->listElements[i].dragged == TRUE) {
             map->listElements[i].position.x += event->motion.xrel;

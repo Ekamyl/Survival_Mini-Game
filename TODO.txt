@@ -2,3 +2,10 @@ change le type de la map pour la scene 0 :
 - rajoute un type desktop qui serviras aux ecrans d'accueils des ordis 
 
 enleve les fonctions inutile du map.c
+
+je vais enlever l'effet de glitch sur l'ecran d'ordi. Pour ne pas oublier methode : 
+- faire une texture 
+
+initialiser les variables du main dans une foncion pour rendre le main plus propre 
+
+nettoyer les fichier, les rangés, mieux organiser 

@@ -5,6 +5,7 @@
 #include "player.h"
 #include "map.h"
 #include "camera.h"
+#include "desktop.h"
 
 extern SDL_Renderer * renderer ;
 extern GameStatus_t gameStatus ;

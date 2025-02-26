@@ -156,6 +156,21 @@ void destroy_noise_texture () {
 }
 
 
+static SDL_Texture * desktopGlitchTexture ;
+/**
+ * Si erreur lors du chargement retourne 1 sinon retourne 0
+ */
+int generate_desktop_glitch_texture () {
+    desktopGlitchTexture = load_png("assets/desktop_glitch.png");
+    if (desktopGlitchTexture == NULL) {
+        return 1;
+    }
+}
+void generate_desktop_glitch_texture () {
+    SDL_DestroyTexture(desktopGlitchTexture);
+}
+
+
 void apply_glitch(Camera_t * camera, SDL_Texture *texture, int width, int height) {
     
     int axis = rand() % 2 ; // 0 pour horizontal, 1 pour vertical
