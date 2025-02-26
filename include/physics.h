@@ -15,7 +15,7 @@ typedef struct RigidBody_u {
 } RigidBody_t ;
 
 typedef struct StaticBody_u {
-    Rectangle_t rec;
+    Rectangle_t rec; 
     SDL_Texture * texture;
 } StaticBody_t ;
 

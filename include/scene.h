@@ -6,7 +6,7 @@ extern GameStatus_t gameStatus ;
 
 typedef struct Camera_u Camera_t ;
 typedef struct Player_u Player_t ;
-typedef struct Map_u Map_t ;
+typedef struct Map_u Map_t ; 
 
 
 void init_scene(Camera_t * camera, Player_t * player, Map_t * map);

@@ -34,6 +34,9 @@ Rectangle_t return_ground () {
 
 void init_elements_scene0 (Map_t * map){
     map->listElements[ERROR_WINDOW].hidden = TRUE;
+
+    map->listElements[ICON_GAME].position.x = 50 + (rand() % 30 * 8);
+    map->listElements[ICON_GAME].position.y = 50 + (rand() % 30 * 8);
 }
 
 /**

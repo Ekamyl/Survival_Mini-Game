@@ -13,6 +13,7 @@
  */
 void init_scene0(Camera_t * camera, Player_t * player, Map_t * map) {
     init_elements_scene0(map);
+    
 }
 
 
@@ -39,12 +40,8 @@ int element_update(Map_t * map, SDL_Event * event) {
     SDL_Point mouse;
     SDL_GetMouseState(&mouse.x, &mouse.y);
 
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 231, 244, 244, 100);
-
     for (int i = 0; i < map->nbObject; i++) {
         if (map->listElements[i].hidden == FALSE && SDL_PointInRect(&mouse, &map->listElements[i].position)) {
-            SDL_RenderFillRect(renderer, &map->listElements[i].position);
 
             // si le joueur clique sur l'icone 
             if (event->button.type == SDL_MOUSEBUTTONDOWN) {
@@ -72,8 +69,17 @@ int element_update(Map_t * map, SDL_Event * event) {
  * 
  */
 void move_element (Map_t * map, SDL_Event * event) {
-    printf("Je suis la\n");
+    SDL_Point mouse;
+    SDL_GetMouseState(&mouse.x, &mouse.y);
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 231, 244, 244, 60);
+
     for (int i = 0; i < map->nbObject; i++) {
+        if (map->listElements[i].hidden == FALSE && SDL_PointInRect(&mouse, &map->listElements[i].position)) {
+            printf("bon\n");
+            SDL_RenderFillRect(renderer, &map->listElements[i].position);
+        }
         if (map->listElements[i].dragged == TRUE) {
             map->listElements[i].position.x += event->motion.xrel;
             map->listElements[i].position.y += event->motion.yrel;
