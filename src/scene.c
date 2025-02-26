@@ -69,15 +69,12 @@ int element_update(Map_t * map, SDL_Event * event) {
  * 
  */
 void move_element (Map_t * map, SDL_Event * event) {
-<<<<<<< HEAD
     SDL_Point mouse;
     SDL_GetMouseState(&mouse.x, &mouse.y);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 231, 244, 244, 60);
 
-=======
->>>>>>> refs/remotes/origin/main
     for (int i = 0; i < map->nbObject; i++) {
         if (map->listElements[i].hidden == FALSE && SDL_PointInRect(&mouse, &map->listElements[i].position)) {
             printf("bon\n");
