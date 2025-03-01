@@ -9,15 +9,25 @@
 
 
 
+int mapPrevX, mapPrevY;
 /**
  * 
  */
 void draw_map (Map_t * map, Camera_t * camera) {
+    // methdoe decoupage de la tecture puis affichage sur la fenetre complete 
     SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
     if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
-    
     SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
 
+    // methode affichage complet de la map sur une position bien precise 
+    // SDL_FRect dstrect = {-camera->x, -camera->y, BACKGROUND_WIDTH, BACKGROUND_HEIGHT};
+    // SDL_RenderCopyF(renderer, map->background, NULL, &dstrect);
+
+    // if ((mapPrevX - srcrect.x) != 0) {
+    //     printf("map new coordinates x : %d, y : %d\n", mapPrevX - srcrect.x, mapPrevY - srcrect.y);
+    //     mapPrevX = srcrect.x;
+    //     mapPrevY = srcrect.y;
+    // }
 
     // dessine la zone de collision du sol 
     // SDL_Rect dstrect = {0, map->ground.rec.y, WINDOW_WIDTH, map->ground.rec.height}; 
@@ -106,10 +116,9 @@ void draw_player (Player_t * player, Camera_t * camera) {
             player->animState = 0;
     }
 
-    Rectangle_t rec = player->body.rec;
-    SDL_Rect dstrect = {rec.x - camera->x, rec.y - camera->y, rec.width, rec.height};
+    SDL_FRect position = player->body.position;
+    SDL_Rect dstrect = {position.x - camera->x, position.y - camera->y, position.w, position.h};
     SDL_Rect srcrect = {PLAYER_SPRITE_WIDTH * player->animState + 20, PLAYER_SPRITE_HEIGHT * player->actionState, PLAYER_SPRITE_HEIGHT, PLAYER_SPRITE_HEIGHT};
-
 
     SDL_RenderCopyEx(renderer, player->body.texture, &srcrect, &dstrect, 0, NULL, flip);
 
@@ -229,8 +238,8 @@ int draw (Camera_t * camera, Player_t * player, Map_t * map) {
         case 1 : 
             draw_map(map, camera);
             draw_player(player, camera);
-            if (rand() % 10 > 6)
-                apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
+            // if (rand() % 10 > 6)
+            //     apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
             break;
         default : 
             break;

@@ -16,4 +16,5 @@ typedef struct Camera_u {
 void camera_destructor (Camera_t ** camera);
 Camera_t * camera_constructor (Player_t * player);
 void update_camera (Camera_t * camera, Player_t * player);
-void update_camera_random (Camera_t * camera);
+void update_camera_random (Camera_t * camera
+);

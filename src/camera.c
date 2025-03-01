@@ -16,7 +16,7 @@ Camera_t * camera_constructor (Player_t * player) {
     cam->y = 0;
     cam->width = CAMERA_WIDTH;
     cam->height = CAMERA_HEIGHT;
-    cam->deadzone = player->body.rec.width * 1.5;
+    cam->deadzone = player->body.position.w * 1.5;
     cam->followPlayer = FALSE;
 
     return cam;
@@ -34,11 +34,11 @@ void camera_destructor (Camera_t ** camera) {
  * Elle est repositionnée pour ne pas sortir de la map si besoin 
  */
 void update_camera (Camera_t * camera, Player_t * player) {
-    camera->x = player->body.rec.x + (PLAYER_WIDTH / 2) - (CAMERA_WIDTH / 2); 
+    camera->x = player->body.position.x + (PLAYER_WIDTH / 2) - (CAMERA_WIDTH / 2); 
 
     // en fonction du suivi du joueur 
     if (camera->followPlayer)
-        camera->y = player->body.rec.y + (PLAYER_HEIGHT / 2) - (CAMERA_HEIGHT / 2);
+        camera->y = player->body.position.y + (PLAYER_HEIGHT / 2) - (CAMERA_HEIGHT / 2);
     else 
         camera->y = BACKGROUND_HEIGHT - CAMERA_HEIGHT;
     

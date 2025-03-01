@@ -211,7 +211,7 @@ int play_scene1 (Camera_t * camera, Player_t * player, Map_t * map) {
                         camera->followPlayer = (camera->followPlayer + 1) % 2; printf("changement follow\n");
                         break;
                     case SDLK_i :
-                        printf("INFO :\nplayer x, y : %f %f\ncamera x, y : %f %f\n", player->body.rec.x, player->body.rec.y, camera->x, camera->y);
+                        printf("INFO :\nplayer x, y, vx, vy : %f %f %f %f\ncamera x, y : %f %f\n", player->body.position.x, player->body.position.y, player->body.vx, player->body.vy, camera->x, camera->y);
                         break;
                     default :
                         break;

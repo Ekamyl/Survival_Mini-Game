@@ -13,10 +13,10 @@ Player_t * player_constructor () {
         return NULL;
     }
 
-    player->body.rec.width = PLAYER_WIDTH;
-    player->body.rec.height = PLAYER_HEIGHT;
-    player->body.rec.x = WINDOW_WIDTH / 2;
-    player->body.rec.y = WINDOW_HEIGHT / 2 - 200;
+    player->body.position.w = PLAYER_WIDTH;
+    player->body.position.h = PLAYER_HEIGHT;
+    player->body.position.x = WINDOW_WIDTH / 2;
+    player->body.position.y = WINDOW_HEIGHT / 2 - 200;
     player->body.vx = 0;
     player->body.vy = 0;
     player->body.jump = 0; 
@@ -24,7 +24,7 @@ Player_t * player_constructor () {
 
     player->acceleration = 1; 
     player->deceleration = 0.3;
-    player->vMax = 8;
+    player->vMax = 10;
 
     player->body.texture = load_png("assets/playerSpriteSheet_grey.png");
     if (player->body.texture == NULL) {
@@ -66,7 +66,7 @@ void update_player_anim_state (Player_t * player) {
 }
 
 
-void update_player (Player_t * player, Rectangle_t * ground) {
+void update_player (Player_t * player, SDL_FRect * ground) {
     // gere la hauteur du personnage en fonction du saut
     if (!player->body.onGround) {
         if (player->body.jump > (JUMP_FORCE / 2)) {
@@ -87,8 +87,8 @@ void update_player (Player_t * player, Rectangle_t * ground) {
     update_position(&player->body);
     
     // replace le player pour ne pas sortir de la map 
-    if (player->body.rec.x < 0) player->body.rec.x = 0;
-    if ((player->body.rec.x + player->body.rec.width) > BACKGROUND_WIDTH) player->body.rec.x = BACKGROUND_WIDTH - player->body.rec.width;
+    if (player->body.position.x < 0) player->body.position.x = 0;
+    if ((player->body.position.x + player->body.position.w) > BACKGROUND_WIDTH) player->body.position.x = BACKGROUND_WIDTH - player->body.position.w;
 
     ground_collision(&player->body, ground); 
 }

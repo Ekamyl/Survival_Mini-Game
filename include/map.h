@@ -32,7 +32,7 @@ typedef struct DesktopElement_u {
 typedef struct Map_u {
     SDL_Texture * background ;
 
-    Rectangle_t ground ;
+    SDL_FRect ground ;
     
     SDL_Texture * objectsTexture ;
     DesktopElement_t * listElements ;
@@ -43,6 +43,4 @@ typedef struct Map_u {
 DesktopElement_t * load_elements(int nbObject);
 Map_t * map_constructor () ;
 void map_destructor (Map_t ** map) ;
-void set_rect_null (SDL_Rect * rect) ;
-int rect_is_null (SDL_Rect rect) ;
 void init_elements_scene0 (Map_t * map);

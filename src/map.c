@@ -4,34 +4,6 @@
 #include "../include/texture_loader.h"
 
 
-int rect_is_null (SDL_Rect rect) {
-    return (rect.x == -1);
-}
-
-void set_rect_null (SDL_Rect * rect) {
-    rect->x = -1; 
-    rect->y = -1; 
-    rect->w = -1; 
-    rect->h = -1;  
-}
-
-Rectangle_t return_null () {
-    Rectangle_t null = {0, 0, 0, 0};
-
-    return null;
-}
-
-Rectangle_t return_ground () {
-    Rectangle_t ground = {
-        .x = 0,
-        .y = BACKGROUND_HEIGHT - GROUND_HEIGHT,
-        .width = GROUND_WIDTH,
-        .height = GROUND_HEIGHT
-    };
-
-    return ground;
-}
-
 void init_elements_scene0 (Map_t * map){
     map->listElements[ERROR_WINDOW].hidden = TRUE;
 
@@ -99,10 +71,16 @@ Map_t * map_constructor () {
     }
     
     // donne un zone de cillison pour le sol 
-    map->ground = return_ground();
+    SDL_FRect ground = {
+        .x = 0,
+        .y = BACKGROUND_HEIGHT - GROUND_HEIGHT,
+        .w = GROUND_WIDTH,
+        .h = GROUND_HEIGHT
+    };
+    map->ground = ground;
 
     // charge l'image de fond
-    map->background = load_png("assets/desktop_glitch.png");
+    map->background = load_png("assets/background.png");
     if (map->background == NULL) {
         return NULL;
     }

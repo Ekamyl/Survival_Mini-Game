@@ -35,6 +35,6 @@ typedef struct Player_u {
 
 Player_t * player_constructor ();
 void player_destructor (Player_t ** player);
-void update_player (Player_t * player, Rectangle_t * ground);
+void update_player (Player_t * player, SDL_FRect * ground);
 void handle_input (const uint8_t * keys, Player_t * player);
 void update_player_anim_state (Player_t * player);
