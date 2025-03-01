@@ -75,7 +75,7 @@ void update_player (Player_t * player, Rectangle_t * ground) {
         }
         else if (player->body.jump > 0) {
             player->body.jump -= 5;
-            player->body.vy = 5;
+            player->body.vy = 7;
         }
         else {
             player->body.jump = 0;

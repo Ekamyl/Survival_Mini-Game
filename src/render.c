@@ -166,7 +166,7 @@ int generate_desktop_glitch_texture () {
         return 1;
     }
 }
-void generate_desktop_glitch_texture () {
+void destroy_desktop_glitch_texture () {
     SDL_DestroyTexture(desktopGlitchTexture);
 }
 

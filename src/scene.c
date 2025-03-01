@@ -124,6 +124,8 @@ int play_scene0 (Camera_t * camera, Player_t * player, Map_t * map) {
             case SDL_MOUSEBUTTONDOWN :
                 printf("Bouton presser\n");
                 element_update(map, &event);
+                buttonClicked = 1;
+                clicks = event.button.clicks;
                 break;
             case SDL_MOUSEBUTTONUP :
                 printf("Bouton lever\n");
@@ -140,7 +142,7 @@ int play_scene0 (Camera_t * camera, Player_t * player, Map_t * map) {
     // Effacer l'écran
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear (renderer); 
-    
+
     // position carre vert 
     int cubeSize = 150;
     SDL_Rect rect = {(camera->width / 2) - (cubeSize / 2), (camera->height / 2) - (cubeSize / 2), cubeSize, cubeSize};
