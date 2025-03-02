@@ -66,9 +66,20 @@ int main(int argc, char* argv[]) {
     // Variable to keep track of the time elapsed during the actual frame rendering 
     uint32_t timerStart; 
     uint32_t timerDelay; 
+
+    // variable gestion evenements 
+    SDL_Event event ;
+    int running = 1;
     
     // Boucle principale
-    while (gameStatus.running) {
+    while (running) {
+
+        // recupere les evenements clavier souris en attente 
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0 ;
+            }
+        }
 
         // traitement debut frame 
         start_frame(&timerStart);
@@ -180,7 +191,7 @@ int init_systeme () {
 
 
     // Création du renderer
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL) {
         printf("Erreur de création du renderer: %s\n", SDL_GetError());
         SDL_DestroyWindow(window);

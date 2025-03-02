@@ -9,6 +9,105 @@
 
 
 /**
+ * Detruis la scene 
+ */
+void destroy_scene (Scene_t ** scene) {
+
+    // libere memoire chaine caractere 
+    free((*scene)->name);
+    (*scene)->name = NULL;
+
+    // libere memoire structure Scene_t
+    free(*scene);
+    *scene = NULL;
+}
+
+
+/**
+ * Creer une nouvelle scene 
+ */
+Scene_t * create_scene (char * name, int (*load) (Scene_t *, void **), int (*unLoad) (Scene_t *, void **),
+                        int (*handleEvents) (Scene_t *, void **), int (*update) (Scene_t *, void **), 
+                        int (*render) (Scene_t *, void **)) {
+    
+    // alloue memoire scene
+    Scene_t * scene = malloc(sizeof(Scene_t));
+    if (scene == NULL) {
+        fprintf(stderr, "Erreur malloc scene : %s\n", name);
+        return NULL;
+    }
+
+    
+    // recopie du parametre name dans la scene 
+    int len = strlen(name);
+    scene->name = malloc(sizeof(char) * len);
+    if (scene->name == NULL) {
+        fprintf(stderr, "Erreur malloc name de scene : %s\n", name);
+        return NULL;
+    }
+    strcpy(scene->name, name);
+
+
+    // initialise les pointeurs sur fonctions 
+    scene->load = load ;
+    scene->unLoad = unLoad ;
+    scene->handleEvents = handleEvents ;
+    scene->update = update ;
+    scene->render = render ;
+
+    return scene;
+}
+
+
+void init_scene_manager (SceneManager_t * manager) {
+    
+}
+
+
+/**
+ * Change de scenes 
+ */
+void changeScene (SceneManager_t * manager, char * newScene) {
+    
+    // si la nouvelle scene est identique a la scene actuelle
+    if (strcmp(manager->scenes[manager->index].name, newScene) == 0) return;
+
+    // recherche de l'index de la nouvelle scene 
+    int newIndex = -1 ;
+    for (int i = 0; i < MAX_SCENES; i++) {
+        if (strcmp(manager->scenes[i].name, newScene) == 0) {
+            newIndex = i ;
+        }
+    }
+
+    // si aucune des scenes presentes dans la listes des scenes ne correspond a newScene 
+    if (newIndex == -1) {
+        printf("Changement de scene impossible, \"%s\" introuvable\n", newScene);
+        return ;
+    }
+
+    // variable temporaire de la scene actuelle 
+    int index = manager->index ;
+    Scene_t * scene = &manager->scenes[index] ;
+    
+    // decharge les data de la scene actuelle 
+    if (scene && scene->unLoad) {
+        scene->unLoad(scene, scene->data);
+    }
+
+    // change l'index de la scene courante de manager, et les variables temporaire de la scene actuelle
+    manager->index = newIndex ;
+    index = newIndex ;
+    scene = &manager->scenes[index] ;
+
+    // charge les data de la nouvelle scene
+    if (scene && scene->load) {
+        scene->load(scene, scene->data);
+    }
+}
+
+
+/**
  * 
  */
 void init_scene0(Camera_t * camera, Player_t * player, Map_t * map) {
