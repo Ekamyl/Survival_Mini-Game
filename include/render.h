@@ -27,6 +27,7 @@ typedef struct Animation_u {
 
 
 void draw_map (Map_t * map, Camera_t * camera) ;
+void draw_desktop (Desktop_t * desktop) ;
 int draw (Camera_t * camera, Player_t * player, Map_t * map) ;
 int generate_noise_texture(int width, int height) ;
 void destroy_noise_texture () ;

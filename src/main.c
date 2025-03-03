@@ -57,8 +57,6 @@ int main(int argc, char* argv[]) {
         terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
         return 1;
     }
-
-    init_scene(camera, player, map);
     
     // variable pour l'affichage du nombre de FPS 
     uint32_t previousTime = SDL_GetTicks(); // to print fps every second 
@@ -69,24 +67,43 @@ int main(int argc, char* argv[]) {
 
     // variable gestion evenements 
     SDL_Event event ;
-    int running = 1;
+    int running = TRUE;
+
+    // initialise le scene manager  
+    SceneManager_t * manager = create_scene_manager() ;
+    Scene_t * desktopScene = create_scene("DESKTOP", DESKTOP_load, DESKTOP_unLoad, DESKTOP_handleEvents, DESKTOP_update, DESKTOP_render);
+    Scene_t * level1Scene = create_scene("LEVEL1", LEVEL1_load, LEVEL1_unLoad, LEVEL1_handleEvents, LEVEL1_update, LEVEL1_render);
+    push_scene(manager, desktopScene);
+    push_scene(manager, level1Scene);
+    request_scene_change(manager, "DESKTOP");
+    change_scene(manager);
     
     // Boucle principale
     while (running) {
 
-        // recupere les evenements clavier souris en attente 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = 0 ;
-            }
-        }
-
         // traitement debut frame 
         start_frame(&timerStart);
         
-        // joue la scene en cours
-        gameStatus.playScene[gameStatus.scene](camera, player, map);
+        int currentIndex = manager->index ;
+        Scene_t * currentScene = manager->scenes[currentIndex] ;
 
+        if (!currentScene->handleEvents(currentScene, &event)) 
+            running = FALSE ;
+
+        if (!currentScene->update(currentScene))
+            running = FALSE ;
+
+        if (!currentScene->render(currentScene))
+            running = FALSE ;
+
+
+        if (strcmp(manager->nextScene, "") != 0) {
+            change_scene(manager);
+        }
+        if (running == FALSE) {
+            currentScene->unLoad(currentScene);
+        } 
+        
         // traitement fin frame  
         end_frame(&timerStart, &previousTime);
     }
@@ -222,8 +239,6 @@ int init_systeme () {
         SDL_Quit();
         return 1;
     } 
-    gameStatus.playScene[0] = play_scene0;
-    gameStatus.playScene[1] = play_scene1;
 
     return 0;
 }

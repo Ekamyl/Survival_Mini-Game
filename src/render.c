@@ -50,35 +50,21 @@ void draw_background (Map_t * map, Camera_t * camera) {
 /**
  * Pour afficher les elements relativement a la fenetre et non pas a la camera, passée NULL a camera.
  */
-void draw_listElementss (Map_t * map, Camera_t * camera) {
-    
-    // affiche relativement a la fenetre 
-    if (camera == NULL) {
-        for (int i = 0; i < map->nbObject; i++) {
-            // affiche l'element si il est visible
-            if (map->listElements[i].hidden == FALSE) {
-                SDL_RenderCopy(renderer, map->objectsTexture, &map->listElements[i].srcrect, &map->listElements[i].position);
+void draw_desktop (Desktop_t * desktop) {
 
-                if (map->listElements[i].clicked == TRUE) {
-                    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                    SDL_SetRenderDrawColor(renderer, 231, 244, 244, 100);
+    SDL_RenderCopy(renderer, desktop->background, NULL, NULL);
 
-                    SDL_RenderFillRect(renderer, &map->listElements[i].position);
-                }
-            }
-        }
-
-        return;
-    }
-
-
-    // affiche relativement a la camera 
-    for (int i = 0; i < map->nbObject; i++) {
-
+    for (int i = 0; i < desktop->nbElem; i++) {
         // affiche l'element si il est visible
-        if (map->listElements[i].hidden == FALSE) {
-            SDL_Rect dstrect = {map->listElements[i].position.x - camera->x, map->listElements[i].position.y - camera->y, map->listElements[i].position.w, map->listElements[i].position.h};
-            SDL_RenderCopy(renderer, map->objectsTexture, &map->listElements[i].srcrect, &dstrect);
+        if (desktop->elements[i].hidden == FALSE) {
+            SDL_RenderCopy(renderer, desktop->elementSpritesheet, &desktop->elements[i].srcrect, &desktop->elements[i].position);
+
+            if (desktop->elements[i].clicked == TRUE) {
+                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(renderer, 231, 244, 244, 100);
+
+                SDL_RenderFillRect(renderer, &desktop->elements[i].position);
+            }
         }
     }
 }
@@ -174,6 +160,7 @@ int generate_desktop_glitch_texture () {
     if (desktopGlitchTexture == NULL) {
         return 1;
     }
+    return 0;
 }
 void destroy_desktop_glitch_texture () {
     SDL_DestroyTexture(desktopGlitchTexture);
@@ -220,10 +207,10 @@ void apply_glitch(Camera_t * camera, SDL_Texture *texture, int width, int height
 
 
 void draw_scene0 (Camera_t * camera, Map_t * map) {
-    if (rand() % 10 > 8) 
-        draw_background(map, camera);
+    // if (rand() % 10 > 8) 
+    //     draw_background(map, camera);
     
-    draw_listElementss(map, NULL);
+    // draw_listElements(map, NULL);
 }
 
 
