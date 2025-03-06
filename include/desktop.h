@@ -11,7 +11,7 @@ typedef struct DesktopElementt_u {
     int dragged ;       // TRUE or FALSE 
 } DesktopElementt_t ; 
 
-typedef struct Desktopp_u {
+typedef struct Desktop_u {
     SDL_Texture * background ;
 
     SDL_Texture * elementSpritesheet ;

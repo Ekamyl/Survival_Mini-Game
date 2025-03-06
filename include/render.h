@@ -26,6 +26,7 @@ typedef struct Animation_u {
 } Animation_t ;
 
 
+int draw_text (const char * text, TTF_Font * font, SDL_Color * color) ;
 void draw_map (Map_t * map, Camera_t * camera) ;
 void draw_desktop (Desktop_t * desktop) ;
 int draw (Camera_t * camera, Player_t * player, Map_t * map) ;

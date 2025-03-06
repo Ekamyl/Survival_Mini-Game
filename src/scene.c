@@ -44,7 +44,7 @@ int DESKTOP_load(Scene_t *self) {
         fprintf(stderr, "Erreur: allocation mémoire échouée pour `len`\n");
         return 0;
     }
-    *len = 2;
+    *len = 4;
 
     // Vérification et allocation dynamique de `self->data` si NULL
     if (self->data == NULL) {
@@ -59,12 +59,39 @@ int DESKTOP_load(Scene_t *self) {
     // Création du bureau (Desktop_t)
     Desktop_t *desktop = create_desktop("assets/backgroundDesktopScene.png", "assets/objectsDesktopScene.png", "data/donneesObjetsDesktopScene.csv", NB_ELEM_DESKTOP_SCENE);
     if (desktop == NULL) {
+        fprintf(stderr, "Erreur: création de `desktop` échouée\n");
         free(len);
         free(self->data);
         self->data = NULL;
-        fprintf(stderr, "Erreur: création de `desktop` échouée\n");
         return 0;
     }
+
+    // Création font (TTF_Font) 
+    TTF_Font * font = TTF_OpenFont("assets/PressStart2P-Regular.ttf", 23) ;
+    if (font == NULL) {
+        fprintf(stderr, "Erreur open font : assets/PressStart2P-Regular.ttf\n");
+        free(len);
+        destroy_desktop(&desktop);
+        free(self->data);
+        self->data = NULL;
+    } 
+
+    // Création couleur font (SDL_Color)  
+    SDL_Color * color = malloc(sizeof(SDL_Color)) ;
+    if (color == NULL) {
+        fprintf(stderr, "Erreur malloc coor\n");
+        free(len);
+        destroy_desktop(&desktop);
+        TTF_CloseFont(font);
+        free(self->data);
+        self->data = NULL;
+    }
+    
+    // Initialisation de la couleur du font 
+    color->r = 255 ; 
+    color->g = 255 ; 
+    color->b = 255 ; 
+    color->a = 100 ; 
 
     // Initialisation element du bureau (DesktopElement_t)
     desktop->elements[3].hidden = TRUE ;    // Annule affichage icone message d'erreur  
@@ -72,6 +99,8 @@ int DESKTOP_load(Scene_t *self) {
     // Stockage dans `self->data`
     self->data[0] = len;
     self->data[1] = desktop;
+    self->data[2] = font ;
+    self->data[3] = color ;
 
     printf("[INFO] : Chargement des données DESKTOP réussi\n");
     return 1; 
@@ -107,8 +136,16 @@ int DESKTOP_unLoad(Scene_t *self) {
     }
 
     // Libération de la structure Desktop_t (self->data[1])
-    Desktop_t *desktop = (Desktop_t *)self->data[1];
+    Desktop_t *desktop = (Desktop_t *)self->data[1] ;
     destroy_desktop(&desktop);
+
+    // Libération du font (self->data[2])
+    TTF_Font * font = (TTF_Font *)self->data[2] ;
+    TTF_CloseFont(font);
+
+    // Libération de la structure SDL_Color (self->data[3])
+    SDL_Color * color = (SDL_Color *)self->data[3] ;
+    free(color);
 
     // Libération du tableau `self->data` et mise à NULL
     free(self->data);
@@ -173,6 +210,9 @@ int DESKTOP_render (Scene_t * self) {
 
     Desktop_t * desktop = (Desktop_t *) self->data[1] ;
     draw_desktop(desktop);
+
+    char text[128] = "ABCDEFGHIJKLMOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789" ;
+    if (rand() % 10 > 4) draw_text(text, (TTF_Font *)self->data[2], (SDL_Color *)self->data[3]);
 
     SDL_RenderPresent(renderer);
 

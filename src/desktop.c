@@ -128,7 +128,11 @@ void destroy_desktop(Desktop_t **desktop) {
         // Détruit la texture de fond si elle existe
         if ((*desktop)->background != NULL) {
             SDL_DestroyTexture((*desktop)->background);
-            (*desktop)->background = NULL;
+        }
+
+        // Détruit la texture des éléments 
+        if ((*desktop)->elementSpritesheet != NULL) {
+            SDL_DestroyTexture((*desktop)->elementSpritesheet);
         }
 
         // Libère la structure principale Desktop_t

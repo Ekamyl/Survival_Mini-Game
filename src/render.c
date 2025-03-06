@@ -7,6 +7,33 @@
 #include "../include/render.h"
 
 
+/**
+ * 
+ */
+err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color) {
+
+    SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(font, text, *color, 0) ;
+    if (surface == NULL) {
+        fprintf(stderr, "Erreur malloc surface du text %s : %s\n", text, SDL_GetError());
+        return ERROR ;
+    }
+
+    SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface) ;
+    if (texture == NULL) {
+        fprintf(stderr, "Erreur creation texture from surface du text %s : %s\n", text, SDL_GetError());
+        SDL_FreeSurface(surface);
+        return ERROR ;
+    }
+
+    SDL_Rect textRect = {0, WINDOW_HEIGHT / 2, 100, 100} ;
+    SDL_QueryTexture(texture, NULL, NULL, &textRect.w, &textRect.h);
+
+    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+
+    SDL_DestroyTexture(texture);
+
+    return NO_ERR ;
+} 
 
 
 int mapPrevX, mapPrevY;
