@@ -10,7 +10,7 @@
 /**
  * 
  */
-err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color) {
+err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color, SDL_Rect * dstrect) {
 
     SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(font, text, *color, 0) ;
     if (surface == NULL) {
@@ -25,10 +25,9 @@ err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color) {
         return ERROR ;
     }
 
-    SDL_Rect textRect = {0, WINDOW_HEIGHT / 2, 100, 100} ;
-    SDL_QueryTexture(texture, NULL, NULL, &textRect.w, &textRect.h);
+    SDL_QueryTexture(texture, NULL, NULL, &dstrect->w, &dstrect->h);
 
-    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+    SDL_RenderCopy(renderer, texture, NULL, dstrect);
 
     SDL_DestroyTexture(texture);
 

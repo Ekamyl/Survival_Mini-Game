@@ -84,24 +84,25 @@ int main(int argc, char* argv[]) {
         // traitement debut frame 
         start_frame(&timerStart);
         
+        // Récupère les données nécessaires de la scène actuelle
         int currentIndex = manager->index ;
         Scene_t * currentScene = manager->scenes[currentIndex] ;
+        InfoScene_t * info = (InfoScene_t *)currentScene->data[0] ;
 
-        if (!currentScene->handleEvents(currentScene, &event)) 
-            running = FALSE ;
+        // Joue la scène
+        currentScene->handleEvents(currentScene, &event) ;
+        currentScene->update(currentScene) ;
+        currentScene->render(currentScene) ;
 
-        if (!currentScene->update(currentScene))
-            running = FALSE ;
-
-        if (!currentScene->render(currentScene))
-            running = FALSE ;
-
-
+        // Vérification des scènes en attentes
         if (strcmp(manager->nextScene, "") != 0) {
-            change_scene(manager);
+            change_scene(manager); 
         }
-        if (running == FALSE) {
+
+        // Vérification de l'état du jeu (fin ou continuer)
+        if (info->end == TRUE) {
             currentScene->unLoad(currentScene);
+            running = FALSE ;
         } 
         
         // traitement fin frame  

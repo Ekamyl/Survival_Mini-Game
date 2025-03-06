@@ -9,19 +9,14 @@
 #include "../include/desktop.h"
 
 
-
-// #######################################################################################
-// ############################## FONCTIONS SCENE DESKTOP ################################
-// #######################################################################################
-
-
 /**
  * @brief Charge les données de la scène "DESKTOP" et les stocke dans `self->data`.
  * 
  * Cette fonction initialise la structure `Scene_t` en allouant et en stockant les données 
  * nécessaires à la scène "DESKTOP". Ces données incluent :
- * - `self->data[0]` : Un entier (`int *len`) indiquant le nombre d'éléments stockés.
+ * - `self->data[0]` : Un pointeur vers une structure `InfoScene_t` qui contient les info de la scene.
  * - `self->data[1]` : Un pointeur vers la structure `Desktop_t`.
+ * - `self->data[1]` : Un pointeur vers un font pour les textes (type `TTF_Font`).
  * 
  * Si `self->data` est `NULL`, un tableau dynamique de `void *` est alloué.
  * 
@@ -31,28 +26,29 @@
  * @note L'appelant est responsable de libérer `self->data`, `len` et `desktop` après utilisation.
  * @warning En cas d'échec de l'allocation mémoire ou du chargement de `desktop`, la fonction retourne `0`.
  */
-int DESKTOP_load(Scene_t *self) {
+void DESKTOP_load(Scene_t *self) {
 
     if (self == NULL) {
         fprintf(stderr, "Erreur: `self` est NULL\n");
-        return 0;
+        return ;
     }
 
     // Allocation et initialisation du compteur d'éléments
-    int *len = malloc(sizeof(int));
-    if (len == NULL) {
+    InfoScene_t * info = malloc(sizeof(InfoScene_t));
+    if (info == NULL) {
         fprintf(stderr, "Erreur: allocation mémoire échouée pour `len`\n");
-        return 0;
+        return ;
     }
-    *len = 4;
+    info->len = 3;
+    info->end = FALSE ;
 
     // Vérification et allocation dynamique de `self->data` si NULL
     if (self->data == NULL) {
-        self->data = malloc(sizeof(void *) * (*len));
+        self->data = malloc(sizeof(void *) * (info->len));
         if (self->data == NULL) {
             fprintf(stderr, "Erreur: allocation mémoire échouée pour `self->data`\n");
-            free(len);
-            return 0;
+            free(info);
+            return ;
         }
     }
 
@@ -60,50 +56,30 @@ int DESKTOP_load(Scene_t *self) {
     Desktop_t *desktop = create_desktop("assets/backgroundDesktopScene.png", "assets/objectsDesktopScene.png", "data/donneesObjetsDesktopScene.csv", NB_ELEM_DESKTOP_SCENE);
     if (desktop == NULL) {
         fprintf(stderr, "Erreur: création de `desktop` échouée\n");
-        free(len);
+        free(info);
         free(self->data);
         self->data = NULL;
-        return 0;
+        return ;
     }
 
     // Création font (TTF_Font) 
     TTF_Font * font = TTF_OpenFont("assets/PressStart2P-Regular.ttf", 23) ;
     if (font == NULL) {
         fprintf(stderr, "Erreur open font : assets/PressStart2P-Regular.ttf\n");
-        free(len);
+        free(info);
         destroy_desktop(&desktop);
         free(self->data);
         self->data = NULL;
     } 
-
-    // Création couleur font (SDL_Color)  
-    SDL_Color * color = malloc(sizeof(SDL_Color)) ;
-    if (color == NULL) {
-        fprintf(stderr, "Erreur malloc coor\n");
-        free(len);
-        destroy_desktop(&desktop);
-        TTF_CloseFont(font);
-        free(self->data);
-        self->data = NULL;
-    }
-    
-    // Initialisation de la couleur du font 
-    color->r = 255 ; 
-    color->g = 255 ; 
-    color->b = 255 ; 
-    color->a = 100 ; 
-
     // Initialisation element du bureau (DesktopElement_t)
     desktop->elements[3].hidden = TRUE ;    // Annule affichage icone message d'erreur  
 
     // Stockage dans `self->data`
-    self->data[0] = len;
+    self->data[0] = info;
     self->data[1] = desktop;
     self->data[2] = font ;
-    self->data[3] = color ;
 
     printf("[INFO] : Chargement des données DESKTOP réussi\n");
-    return 1; 
 }
 
 
@@ -111,60 +87,60 @@ int DESKTOP_load(Scene_t *self) {
  * @brief Décharge les données de la scène "DESKTOP" et libère la mémoire allouée.
  * 
  * Cette fonction libère les ressources allouées dans `DESKTOP_load()`, notamment :
- * - `self->data[0]` : Le pointeur `int *len`.
+ * - `self->data[0]` : La structure `InfoScene_t * info`.
  * - `self->data[1]` : La structure `Desktop_t`, y compris `desktop->elements` et `desktop->background`.
+ * - `self->data[1]` : Le pointeur vers `TTF_Font * font` 
  * - `self->data` : Le tableau de `void *`.
  * 
  * @param self Pointeur vers la structure `Scene_t` contenant les données de la scène.
  * @return int Retourne `1` en cas de succès, ou `0` si `self` est `NULL`.
  */
-int DESKTOP_unLoad(Scene_t *self) {
+void DESKTOP_unLoad(Scene_t *self) {
     if (self == NULL) {
         fprintf(stderr, "Erreur: `self` est NULL\n");
-        return 0;
+        return;
     }
 
     if (self->data == NULL) {
         fprintf(stderr, "Aucune donnée à libérer dans `self->data`\n");
-        return 1;
+        return;
     }
 
-    // Récupération du nombre d'éléments stockés (self->data[0])
-    int *len = (int *)self->data[0];
-    if (len != NULL) {
-        free(len);
+    // Libération de la structure InfoScene_t (self->data[0])
+    InfoScene_t * info = (InfoScene_t *)self->data[0];
+    if (info != NULL) {
+        free(info);
     }
 
     // Libération de la structure Desktop_t (self->data[1])
     Desktop_t *desktop = (Desktop_t *)self->data[1] ;
-    destroy_desktop(&desktop);
+    if (desktop != NULL) {
+        destroy_desktop(&desktop);
+    }
 
     // Libération du font (self->data[2])
     TTF_Font * font = (TTF_Font *)self->data[2] ;
-    TTF_CloseFont(font);
-
-    // Libération de la structure SDL_Color (self->data[3])
-    SDL_Color * color = (SDL_Color *)self->data[3] ;
-    free(color);
+    if (font != NULL) {
+        TTF_CloseFont(font);
+    }
 
     // Libération du tableau `self->data` et mise à NULL
     free(self->data);
     self->data = NULL;
 
     printf("[INFO] : Déchargement des données DESKTOP réussi\n");
-    return 1;
 }
 
 
-int DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
+void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
 
+    InfoScene_t * info = (InfoScene_t *)self->data[0] ;
     Desktop_t * desktop = self->data[1] ;
-    int continuePlaying = TRUE ;
     
     while (SDL_PollEvent(event)) {
         switch (event->type) {
             case SDL_QUIT :
-                continuePlaying = FALSE ;
+                info->end = TRUE ;
                 break;
             case SDL_KEYDOWN :
                 switch (event->key.keysym.sym) {
@@ -175,7 +151,7 @@ int DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
                     case SDLK_SPACE :
                         break;
                     case SDLK_BACKSPACE : 
-                        continuePlaying = FALSE;
+                        info->end = TRUE;
                     default :
                         break;
                 }
@@ -193,17 +169,17 @@ int DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
                 break;
         }
     }
-
-    return continuePlaying; 
 }
 
 
-int DESKTOP_update (Scene_t * self) {
-    return 1; 
+void DESKTOP_update (Scene_t * self) {
+    return; 
 }
 
 
-int DESKTOP_render (Scene_t * self) {
+void DESKTOP_render (Scene_t * self) {
+
+    static int frameCount = 0 ;
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
@@ -211,12 +187,23 @@ int DESKTOP_render (Scene_t * self) {
     Desktop_t * desktop = (Desktop_t *) self->data[1] ;
     draw_desktop(desktop);
 
-    char text[128] = "ABCDEFGHIJKLMOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789" ;
-    if (rand() % 10 > 4) draw_text(text, (TTF_Font *)self->data[2], (SDL_Color *)self->data[3]);
+    
+    if (rand() % 10 > 4) {
+        char text[] = "Tu n'iras nul part" ;
 
-    SDL_RenderPresent(renderer);
+        SDL_Color rouge = {145, 0, 0, 255} ;
+        SDL_Rect posRouge = {50, WINDOW_HEIGHT / 2, 100, 100} ;
 
-    return 1; 
+        SDL_Color blanc = {255, 255, 255, 255} ;
+        SDL_Rect posBlanc = {50 + 2, WINDOW_HEIGHT / 2 - 2, 100, 100} ;
+
+        draw_text(text, (TTF_Font *)self->data[2], &rouge, &posRouge);
+        draw_text(text, (TTF_Font *)self->data[2], &blanc, &posBlanc);
+    }
+
+    frameCount++;
+
+    SDL_RenderPresent(renderer); 
 }
 
 
@@ -227,28 +214,28 @@ int DESKTOP_render (Scene_t * self) {
 
 
 
-int LEVEL1_load (Scene_t * self) {
-    return 1; 
+void LEVEL1_load (Scene_t * self) {
+    return ; 
 }
 
 
-int LEVEL1_unLoad (Scene_t * self) {
-    return 1; 
+void LEVEL1_unLoad (Scene_t * self) {
+    return ; 
 }
 
 
-int LEVEL1_handleEvents (Scene_t * self, SDL_Event * event) {
-    return 1; 
+void LEVEL1_handleEvents (Scene_t * self, SDL_Event * event) {
+    return ; 
 }
 
 
-int LEVEL1_update (Scene_t * self) {
-    return 1; 
+void LEVEL1_update (Scene_t * self) {
+    return ; 
 }
 
 
-int LEVEL1_render (Scene_t * self) {
-    return 1; 
+void LEVEL1_render (Scene_t * self) {
+    return ; 
 }
 
 
@@ -275,9 +262,9 @@ void destroy_scene (Scene_t ** scene) {
 /**
  * Creer une nouvelle scene 
  */
-Scene_t * create_scene (char * name, int (*load) (Scene_t *), int (*unLoad) (Scene_t *),
-                        int (*handleEvents) (Scene_t *, SDL_Event *), int (*update) (Scene_t *), 
-                        int (*render) (Scene_t *)) {
+Scene_t * create_scene (char * name, void (*load) (Scene_t *), void (*unLoad) (Scene_t *),
+                        void (*handleEvents) (Scene_t *, SDL_Event *), void (*update) (Scene_t *), 
+                        void (*render) (Scene_t *)) {
     
     // alloue memoire scene
     Scene_t * scene = malloc(sizeof(Scene_t));
@@ -289,7 +276,7 @@ Scene_t * create_scene (char * name, int (*load) (Scene_t *), int (*unLoad) (Sce
     
     // recopie du parametre name dans la scene 
     int len = strlen(name);
-    scene->name = malloc(sizeof(char) * len);
+    scene->name = malloc(sizeof(char) * len + 1);
     if (scene->name == NULL) {
         fprintf(stderr, "Erreur malloc name de scene : %s\n", name);
         return NULL;
@@ -454,28 +441,27 @@ void change_scene(SceneManager_t *manager) {
  * Renvoi 1 par défaut, 0 si la fin du jeu a été déclenché. 
  */
 int play_scene (SceneManager_t * manager, SDL_Event * event) {
-    int continuePlay = TRUE ;
+    // Récupère les données nécessaires de la scène actuelle
     int currentIndex = manager->index ;
     Scene_t * currentScene = manager->scenes[currentIndex] ;
+    InfoScene_t * info = (InfoScene_t *)currentScene->data[0] ;
 
-    if (!currentScene->handleEvents(currentScene, event)) 
-        continuePlay = FALSE ;
+    // Joue la scène
+    currentScene->handleEvents(currentScene, event) ;
+    currentScene->update(currentScene) ;
+    currentScene->render(currentScene) ;
 
-    if (!currentScene->update(currentScene))
-        continuePlay = FALSE ;
-
-    if (!currentScene->render(currentScene))
-        continuePlay = FALSE ;
-
-
+    // Vérification des scènes en attentes
     if (strcmp(manager->nextScene, "") != 0) {
-        change_scene(manager);
+        change_scene(manager); 
     }
-    if (continuePlay == FALSE) {
+
+    // Vérification de l'état du jeu (fin ou continuer)
+    if (info->end == TRUE) {
         currentScene->unLoad(currentScene);
     } 
 
-    return continuePlay ;
+    return info->end ;
 }
 
 

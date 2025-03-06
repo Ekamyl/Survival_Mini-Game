@@ -13,16 +13,21 @@ typedef struct Player_u Player_t ;
 typedef struct Map_u Map_t ; 
 typedef struct Scene_u Scene_t ;
 
+typedef struct InfoScene_u {
+    int len ;       // Taille attribut `data` de la scene 
+    int end ;       // Trigger de la fin du jeu, prends valeur TRUE ou FALSE 
+} InfoScene_t ;
+
 typedef struct Scene_u {
     char * name ;
     void ** data ;
 
-    int (*load) (Scene_t *) ;
-    int (*unLoad) (Scene_t *) ;
+    void (*load) (Scene_t *) ;
+    void (*unLoad) (Scene_t *) ;
 
-    int (*handleEvents) (Scene_t *, SDL_Event *) ;
-    int (*update) (Scene_t *) ;
-    int (*render) (Scene_t *) ;
+    void (*handleEvents) (Scene_t *, SDL_Event *) ;
+    void (*update) (Scene_t *) ;
+    void (*render) (Scene_t *) ;
 } Scene_t ;
 
 typedef struct SceneManager_u {
@@ -40,22 +45,22 @@ void request_scene_change (SceneManager_t * manager, char * name) ;
 SceneManager_t * create_scene_manager () ;
 void destroy_scene_manager (SceneManager_t ** manager) ;
 int play_scene (SceneManager_t * manager, SDL_Event * event);
-Scene_t * create_scene (char * name, int (*load) (Scene_t *), int (*unLoad) (Scene_t *), 
-                        int (*handleEvents) (Scene_t *, SDL_Event *), int (*update) (Scene_t *), 
-                        int (*render) (Scene_t *));
+Scene_t * create_scene (char * name, void (*load) (Scene_t *), void (*unLoad) (Scene_t *), 
+                        void (*handleEvents) (Scene_t *, SDL_Event *), void (*update) (Scene_t *), 
+                        void (*render) (Scene_t *));
 void destroy_scene (Scene_t ** scene);
 
 
 // fonctions manip scene desktop
-int DESKTOP_load (Scene_t * self) ;
-int DESKTOP_unLoad (Scene_t * self) ;
-int DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) ;
-int DESKTOP_update (Scene_t * self) ;
-int DESKTOP_render (Scene_t * self) ; 
+void DESKTOP_load (Scene_t * self) ;
+void DESKTOP_unLoad (Scene_t * self) ;
+void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) ;
+void DESKTOP_update (Scene_t * self) ;
+void DESKTOP_render (Scene_t * self) ; 
 
 // fonctions manip scene level1
-int LEVEL1_load (Scene_t * self) ;
-int LEVEL1_unLoad (Scene_t * self) ;
-int LEVEL1_handleEvents (Scene_t * self, SDL_Event * event) ;
-int LEVEL1_update (Scene_t * self) ;
-int LEVEL1_render (Scene_t * self) ; 
+void LEVEL1_load (Scene_t * self) ;
+void LEVEL1_unLoad (Scene_t * self) ;
+void LEVEL1_handleEvents (Scene_t * self, SDL_Event * event) ;
+void LEVEL1_update (Scene_t * self) ;
+void LEVEL1_render (Scene_t * self) ; 
