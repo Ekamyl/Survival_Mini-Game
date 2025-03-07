@@ -17,6 +17,7 @@ void end_frame (uint32_t * timerStart, uint32_t * previousTime);
 
 SDL_Window * window ; 
 SDL_Renderer * renderer ; 
+SceneManager_t * manager ;
 GameStatus_t gameStatus ; 
 
 int main(int argc, char* argv[]) {
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
     int running = TRUE;
 
     // initialise le scene manager  
-    SceneManager_t * manager = create_scene_manager() ;
+    manager = create_scene_manager() ;
     Scene_t * desktopScene = create_scene("DESKTOP", DESKTOP_load, DESKTOP_unLoad, DESKTOP_handleEvents, DESKTOP_update, DESKTOP_render);
     Scene_t * level1Scene = create_scene("LEVEL1", LEVEL1_load, LEVEL1_unLoad, LEVEL1_handleEvents, LEVEL1_update, LEVEL1_render);
     push_scene(manager, desktopScene);

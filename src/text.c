@@ -174,8 +174,20 @@ void text_update (Text_t * text) {
             anim->texture = NULL ;
         }
 
+        // Création de la string 
+        char buffer[256] ;
+        strcpy(buffer, text->string);
+
+        int letterCount = 0 ;
+        for (int i = 0; buffer[i] != '\0'; i++) {
+            if (isalpha(buffer[i]))
+                letterCount++;
+            if (letterCount - 1 == text->animation.currentFrame) 
+                buffer[i + 1] = '\0' ;
+        }
+
         // Création d'une surface SDL avec le texte et sa couleur
-        SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(text->font, text->string, anim->textColor, 0);
+        SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(text->font, buffer, anim->textColor, 0);
         if (surface == NULL) {
             fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
             return;
@@ -204,7 +216,7 @@ void text_update (Text_t * text) {
             }
 
             // Création d'une surface SDL avec le texte et la couleur de l'ombre
-            surface = TTF_RenderUTF8_Blended_Wrapped(text->font, text->string, anim->hollowColor, 0);
+            surface = TTF_RenderUTF8_Blended_Wrapped(text->font, buffer, anim->hollowColor, 0);
             if (surface == NULL) {
                 fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
                 return;

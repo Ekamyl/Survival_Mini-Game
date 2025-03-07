@@ -193,6 +193,8 @@ void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
                         break;
                     case SDLK_d :
                         break;
+                    case SDLK_r : 
+                        break;
                     case SDLK_SPACE :
                         break;
                     case SDLK_BACKSPACE : 
@@ -421,6 +423,7 @@ void change_scene(SceneManager_t *manager) {
     // Vérifie si la scène a été trouvée
     if (newIndex == -1) {
         printf("[INFO] : Changement de scène impossible : \"%s\" introuvable\n", newScene);
+        strcpy(manager->nextScene, "");
         return;
     }
 
@@ -444,6 +447,8 @@ void change_scene(SceneManager_t *manager) {
 
     // Vérifie si la scène demandée est déjà la scène en cours
     if (strcmp(manager->scenes[manager->index]->name, newScene) == 0) {
+        printf("[INFO] : Pas de changement de scène, \"%s\" déjà en cours\n", newScene);
+        strcpy(manager->nextScene, "");
         return;  // Rien à changer, on sort de la fonction
     }
 

@@ -8,7 +8,7 @@
 #include "camera.h"
 #include "desktop.h"
 
-#define TEXT_ANIM_SPEED 4
+#define TEXT_ANIM_SPEED 6
 
 extern SDL_Renderer * renderer ;
 extern GameStatus_t gameStatus ;

@@ -37,6 +37,7 @@ typedef struct SceneManager_u {
     int index ;             // indice de la scene active 
     char nextScene[128] ;      // nom de la prochaine, prends une valeur que si un changement de scene doit se produire 
 } SceneManager_t ;
+extern SceneManager_t * manager ;
 
 
 // fonctions manip scene manager et scene 
