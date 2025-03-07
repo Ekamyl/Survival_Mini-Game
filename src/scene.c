@@ -7,6 +7,7 @@
 #include "../include/render.h"
 #include "../include/scene.h"
 #include "../include/desktop.h"
+#include "../include/text.h"
 
 
 /**
@@ -39,7 +40,7 @@ void DESKTOP_load(Scene_t *self) {
         fprintf(stderr, "Erreur: allocation mémoire échouée pour `len`\n");
         return ;
     }
-    info->len = 3;
+    info->len = 4;
     info->end = FALSE ;
 
     // Vérification et allocation dynamique de `self->data` si NULL
@@ -70,14 +71,44 @@ void DESKTOP_load(Scene_t *self) {
         destroy_desktop(&desktop);
         free(self->data);
         self->data = NULL;
+        return ;
     } 
     // Initialisation element du bureau (DesktopElement_t)
     desktop->elements[3].hidden = TRUE ;    // Annule affichage icone message d'erreur  
 
+    // Création tableau de text (`Text_t`) 
+    int nbText = 1 ;
+    Text_t ** tabText = malloc(sizeof(Text_t *) * nbText) ;
+    if (tabText == NULL) {
+        fprintf(stderr, "Erreur malloc tableau text scene DESKTOP : %s\n", SDL_GetError());
+        free(info);
+        destroy_desktop(&desktop);
+        TTF_CloseFont(font);
+        free(self->data);
+        self->data = NULL;
+        return ;
+    }
+    info->nbText = nbText ;
+
+    // création des text 
+    SDL_Color color = {255, 255, 255, 255} ;
+    SDL_Rect position = {50, WINDOW_HEIGHT / 2, 100, 100} ;
+    tabText[0] = create_text ("Tu n'iras nul part", font, &color, &position) ;
+    if (tabText[0] == NULL) {
+        free(info);
+        destroy_desktop(&desktop);
+        TTF_CloseFont(font);
+        free(tabText);
+        free(self->data);
+        self->data = NULL;
+        return ;
+    }
+
     // Stockage dans `self->data`
-    self->data[0] = info;
-    self->data[1] = desktop;
+    self->data[0] = info ;
+    self->data[1] = desktop ;
     self->data[2] = font ;
+    self->data[3] = tabText ;
 
     printf("[INFO] : Chargement des données DESKTOP réussi\n");
 }
@@ -106,12 +137,6 @@ void DESKTOP_unLoad(Scene_t *self) {
         return;
     }
 
-    // Libération de la structure InfoScene_t (self->data[0])
-    InfoScene_t * info = (InfoScene_t *)self->data[0];
-    if (info != NULL) {
-        free(info);
-    }
-
     // Libération de la structure Desktop_t (self->data[1])
     Desktop_t *desktop = (Desktop_t *)self->data[1] ;
     if (desktop != NULL) {
@@ -122,6 +147,26 @@ void DESKTOP_unLoad(Scene_t *self) {
     TTF_Font * font = (TTF_Font *)self->data[2] ;
     if (font != NULL) {
         TTF_CloseFont(font);
+    }
+
+    // Libération du tableau de text et de ses éléments 
+    InfoScene_t * info = (InfoScene_t *)self->data[0] ;
+    Text_t ** tabText = (Text_t **)self->data[3] ;
+    if (tabText != NULL) {
+
+        if (info != NULL) {
+            for (int i = 0; i < info->nbText; i++) {
+                destroy_text(&tabText[i]);
+            }
+        }
+        else {
+            printf("[ERROR] : Libération du tableau de text de DESKTOP impossible car `info` NULL\n");
+        }
+    }
+
+    // Libération de la structure InfoScene_t (self->data[0])
+    if (info != NULL) {
+        free(info);
     }
 
     // Libération du tableau `self->data` et mise à NULL
@@ -173,6 +218,10 @@ void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
 
 
 void DESKTOP_update (Scene_t * self) {
+
+    Text_t ** tabText = (Text_t **)self->data[3] ;
+    text_update(tabText[0]);
+
     return; 
 }
 
@@ -187,19 +236,8 @@ void DESKTOP_render (Scene_t * self) {
     Desktop_t * desktop = (Desktop_t *) self->data[1] ;
     draw_desktop(desktop);
 
-    
-    if (rand() % 10 > 4) {
-        char text[] = "Tu n'iras nul part" ;
-
-        SDL_Color rouge = {145, 0, 0, 255} ;
-        SDL_Rect posRouge = {50, WINDOW_HEIGHT / 2, 100, 100} ;
-
-        SDL_Color blanc = {255, 255, 255, 255} ;
-        SDL_Rect posBlanc = {50 + 2, WINDOW_HEIGHT / 2 - 2, 100, 100} ;
-
-        draw_text(text, (TTF_Font *)self->data[2], &rouge, &posRouge);
-        draw_text(text, (TTF_Font *)self->data[2], &blanc, &posBlanc);
-    }
+    Text_t ** tabText = (Text_t **)self->data[3] ;
+    draw_text(tabText[0]);
 
     frameCount++;
 

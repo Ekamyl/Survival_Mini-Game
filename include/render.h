@@ -8,32 +8,30 @@
 #include "camera.h"
 #include "desktop.h"
 
+#define TEXT_ANIM_SPEED 4
+
 extern SDL_Renderer * renderer ;
 extern GameStatus_t gameStatus ;
 
 
+typedef struct Text_u Text_t ;
 typedef enum Direction_u {UP, DOWN, LEFT, RIGHT} Direction_t ;
-typedef enum TextAnimation_u {LEFT_RIGHT} TextAnimation_t ; 
+typedef enum TypeTextAnim_u {LEFT_RIGHT} TypeTextAnim_t ; 
 
 /**
  * Structure de gestion de l'animation pour chacun des objets ou entités devant etre animée.
  */
-typedef struct Animation_u {
+typedef struct EntityAnim_u {
     SDL_Texture * spritesheet;      // Texture globale contenant tous les sprites
     int startX, startY;             // Position de la première frame dans le spritesheet
     int frameWidth, frameHeight;    // Taille d'une frame
-    int numFrames;                  // Nombre total de frames d'animation
-    int currentFrame;               // Frame actuelle de l'animation 
-    int animationSpeed;             // Nombre de frames avant changement
-    int frameCount;                 // Compteur interne
-    int loop;                       // 1 = animation en boucle, 0 = joue une seule fois
-    int playing;                    // 1 = animation active, 0 = arrêtée
-} Animation_t ;
+    #include "common_anim_attributes.h"
+} EntityAnim_t ;
 
 /**
- * Structure de gestion de l'animation des textes à afficher. L'animation d'affichage de chaque texte est joué une seule fois.
+ * Structure de gestion de l'animation des textes à afficher. 
  */
-typedef struct Text_u {
+typedef struct TextAnim_u {
 
     // Texture à afficher 
     SDL_Texture * texture ;         // Message en texture 
@@ -43,27 +41,18 @@ typedef struct Text_u {
     
     // Le texte peut avoir une ombre (optionnel)
     int hollow ;                    // TRUE = le texte à une ombre, FALSE = le texte n'a pas d'ombre 
+    SDL_Texture * hollowTexture ;   // Contient la texture de l'ombre 
     SDL_Color hollowColor ;         // Couleur de l'ombre 
     Direction_t hollowDir ;         // Dans quelle direction se dirige l'ombre 
     
-    // Texte 
-    TTF_Font * font ;               // Police de caractère
-    char * string ;                 // Texte à afficher
-    int len ;                       // Longueur de la chaine de caractere 
-    int numLettres ;                // Nombre de lettres
-    
     // Variables propre aux animations 
-    TextAnimation_t anim ;          // Type d'animation
-    int frameCount ;                // Compteur interne
-    int currentLetter ;             // Derniere lettre du texte ayant été animée 
-    int animationSpeed ;            // Nombre de frames avant changement
-    int animationFinished ;         // TRUE = animation terminé, FALSE = animation en cours 
-} Text_t ; 
+    TypeTextAnim_t type ;          // Type d'animation
+    #include "common_anim_attributes.h"
+} TextAnim_t ; 
  
 
-err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color, SDL_Rect * dstrect) ;
+err_t draw_text (Text_t * text) ;
 void change_text (TTF_Font * newFont, SDL_Color * newColor, SDL_Rect * newPos, SDL_Color * newHollowColor) ;
-void update_text () ;
 void draw_map (Map_t * map, Camera_t * camera) ;
 void draw_desktop (Desktop_t * desktop) ;
 int draw (Camera_t * camera, Player_t * player, Map_t * map) ;

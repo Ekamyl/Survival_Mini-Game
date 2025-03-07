@@ -9,6 +9,7 @@
     #include "stdlib.h"
     #include "time.h"
     #include "string.h"
+    #include "ctype.h"
 #else 
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_image.h>
@@ -18,6 +19,7 @@
     #include <stdlib.h>
     #include <time.h>
     #include <string.h>
+    #include <ctype.h>
 #endif 
 
 

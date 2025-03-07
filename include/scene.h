@@ -16,6 +16,7 @@ typedef struct Scene_u Scene_t ;
 typedef struct InfoScene_u {
     int len ;       // Taille attribut `data` de la scene 
     int end ;       // Trigger de la fin du jeu, prends valeur TRUE ou FALSE 
+    int nbText ;    // Taille du tableau de text 
 } InfoScene_t ;
 
 typedef struct Scene_u {

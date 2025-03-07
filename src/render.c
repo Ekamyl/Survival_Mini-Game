@@ -1,35 +1,19 @@
 #include "../include/lib.h"
 #include "../include/main.h"
-#include "../include/texture_loader.h"
+#include "../include/texture_loader.h" 
 #include "../include/map.h"
 #include "../include/camera.h"
 #include "../include/player.h"
 #include "../include/render.h"
+#include "../include/text.h"
 
 
 /**
  * 
  */
-err_t draw_text (const char * text, TTF_Font * font, SDL_Color * color, SDL_Rect * dstrect) {
+err_t draw_text (Text_t * text) {
 
-    SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(font, text, *color, 0) ;
-    if (surface == NULL) {
-        fprintf(stderr, "Erreur malloc surface du text %s : %s\n", text, SDL_GetError());
-        return ERROR ;
-    }
-
-    SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface) ;
-    if (texture == NULL) {
-        fprintf(stderr, "Erreur creation texture from surface du text %s : %s\n", text, SDL_GetError());
-        SDL_FreeSurface(surface);
-        return ERROR ;
-    }
-
-    SDL_QueryTexture(texture, NULL, NULL, &dstrect->w, &dstrect->h);
-
-    SDL_RenderCopy(renderer, texture, NULL, dstrect);
-
-    SDL_DestroyTexture(texture);
+    SDL_RenderCopy(renderer, text->animation.texture, NULL, &text->animation.position);
 
     return NO_ERR ;
 } 
