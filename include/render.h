@@ -16,6 +16,7 @@ extern GameStatus_t gameStatus ;
 
 typedef struct Text_u Text_t ;
 typedef enum Direction_u {UP, DOWN, LEFT, RIGHT} Direction_t ;
+typedef enum TypeHollow_u {TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT} TypeHollow_t ;
 typedef enum TypeTextAnim_u {LEFT_RIGHT} TypeTextAnim_t ; 
 
 /**
@@ -43,16 +44,14 @@ typedef struct TextAnim_u {
     int hollow ;                    // TRUE = le texte à une ombre, FALSE = le texte n'a pas d'ombre 
     SDL_Texture * hollowTexture ;   // Contient la texture de l'ombre 
     SDL_Color hollowColor ;         // Couleur de l'ombre 
-    Direction_t hollowDir ;         // Dans quelle direction se dirige l'ombre 
+    TypeHollow_t hollowDir ;         // Dans quelle direction se dirige l'ombre 
     
     // Variables propre aux animations 
-    TypeTextAnim_t type ;          // Type d'animation
     #include "common_anim_attributes.h"
 } TextAnim_t ; 
  
 
 err_t draw_text (Text_t * text) ;
-void change_text (TTF_Font * newFont, SDL_Color * newColor, SDL_Rect * newPos, SDL_Color * newHollowColor) ;
 void draw_map (Map_t * map, Camera_t * camera) ;
 void draw_desktop (Desktop_t * desktop) ;
 int draw (Camera_t * camera, Player_t * player, Map_t * map) ;

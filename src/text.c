@@ -28,6 +28,8 @@ Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, S
         return NULL;
     }
 
+
+
     // Allocation dynamique pour stocker la chaîne de caractères
     int len = strlen(string);
     text->string = malloc(sizeof(char) * (len + 1));  // +1 pour le caractère nul de fin de chaîne
@@ -40,21 +42,16 @@ Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, S
     // Copie du texte fourni dans la structure
     strcpy(text->string, string);
 
-    // Calcul du nombre de lettres alphabétiques dans la chaîne
-    text->numLettres = 0;
-    for (int i = 0; text->string[i] != '\0'; i++) {
-        if (isalpha(text->string[i])) 
-            text->numLettres++;
-    }
+    // Calcul de la taille de la chaine 
+    text->len = len;
 
     // Assignation de la police de caractères
     text->font = font;
 
     // Initialisation des paramètres de l'animation du texte
-    text->animation.texture = NULL;       // Aucune texture chargée au départ
     text->animation.textColor = *color;   // Assignation de la couleur du texte
     text->animation.position = *position; // Position définie par le paramètre
-    text->animation.needChange = TRUE ;   // Texture à jour au départ
+    text->animation.needChange = TRUE ;   // Texture pas à jour au départ
 
     // Initialisation des paramètres d'ombre (désactivée par défaut)
     text->animation.hollow = FALSE;           // Pas d'ombre
@@ -64,15 +61,14 @@ Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, S
     text->animation.hollowColor.a = 255;      // Opacité maximale
 
     // Configuration de l'animation du texte
-    text->animation.type = LEFT_RIGHT;       // Animation par défaut : déplacement gauche-droite
-    text->animation.numFrames = text->numLettres; // Nombre total de frames basé sur le nombre de lettres
+    text->animation.numFrames = text->len; // Nombre total de frames basé sur le nombre de lettres
     text->animation.currentFrame = 0;        // Début de l'animation à la première frame
     text->animation.animationSpeed = TEXT_ANIM_SPEED; // Vitesse de l'animation définie par une constante
     text->animation.frameCount = 0;          // Compteur interne initialisé à 0
     text->animation.loop = FALSE;            // L'animation ne boucle pas
     text->animation.playing = TRUE;          // L'animation démarre automatiquement
 
-    return text; // Retourne la structure `Text_t` initialisée
+    return text; // Retourne la structure `Text_t` initialisée 
 }
 
 
@@ -92,22 +88,22 @@ Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, S
 void destroy_text (Text_t ** text) {
 
     // Vérifie que le pointeur `text` et son contenu ne sont pas NULL avant de libérer la mémoire
-    if (text != NULL && *text != NULL) {
+    if (existe(text) && existe(*text)) {
 
         // Libère la mémoire allouée pour la chaîne de caractères si elle existe
-        if ((*text)->string != NULL) {
+        if (existe((*text)->string)) {
             free((*text)->string);
             (*text)->string = NULL; // Évite les accès mémoire invalides après libération
         }
 
         // Détruit la texture principale associée à l'animation du texte, si elle existe
-        if ((*text)->animation.texture != NULL) {
+        if (existe((*text)->animation.texture)) {
             SDL_DestroyTexture((*text)->animation.texture);
             (*text)->animation.texture = NULL; // Évite un pointeur suspendu
         }
 
         // Détruit la texture de l'ombre du texte (si présente), si elle existe
-        if ((*text)->animation.hollowTexture != NULL) {
+        if (existe((*text)->animation.hollowTexture)) {
             SDL_DestroyTexture((*text)->animation.hollowTexture);
             (*text)->animation.hollowTexture = NULL; // Évite un pointeur suspendu
         }
@@ -116,6 +112,41 @@ void destroy_text (Text_t ** text) {
         free(*text);
         *text = NULL; // Évite un pointeur suspendu en mettant `text` à NULL
     }
+}
+
+
+
+double genererValeurSinusoidale(double temps, double amplitude, double frequence) {
+    return amplitude * sin(2 * M_PI * frequence * temps);
+}
+
+
+
+/**
+ * 
+ */
+SDL_Texture * create_TTF_Texture (TTF_Font * font, const char * string, SDL_Color color) {
+
+    if (strlen(string) == 0) 
+        return NULL ;
+
+    // Création d'une surface SDL avec le texte et sa couleur
+    SDL_Surface * surface = TTF_RenderUTF8_Blended(font, string, color);
+    if (surface == NULL) {
+        fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", string, SDL_GetError());
+        return NULL ;
+    }
+
+    // Création d'une texture SDL à partir de la surface
+    SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (texture == NULL) {
+        fprintf(stderr, "Erreur creation texture from surface du `Text_t` %s : %s\n", string, SDL_GetError());
+        SDL_FreeSurface(surface);
+        return NULL ;
+    }
+    SDL_FreeSurface(surface); // Libération de la surface car elle n'est plus nécessaire
+
+    return texture ;
 }
 
 
@@ -147,7 +178,9 @@ void text_update (Text_t * text) {
 
         // Si l'animation est active, on passe au frame suivant et on marque un besoin de mise à jour
         if (anim->playing == TRUE) {
-            anim->currentFrame++;
+            do {
+                anim->currentFrame++;
+            } while (!isalpha(text->string[anim->currentFrame])) ;
             anim->needChange = TRUE; // Indique qu'on doit redessiner la texture
         }
     }
@@ -165,75 +198,47 @@ void text_update (Text_t * text) {
         }
     }
 
-    // Si un changement est nécessaire, on met à jour la texture du texte
+    // Si un changement est nécessaire, on met à jour le `srcrect`
     if (anim->needChange == TRUE) {
 
-        // Libère la mémoire de la texture précédente si existante
-        if (anim->texture != NULL) {
+        char * buffer = malloc(sizeof(char) * (anim->currentFrame + 1)) ;
+        strncpy(buffer, text->string, anim->currentFrame);
+
+        if (existe(anim->texture)) {
             SDL_DestroyTexture(anim->texture);
             anim->texture = NULL ;
         }
-
-        // Création de la string 
-        char buffer[256] ;
-        strcpy(buffer, text->string);
-
-        int letterCount = 0 ;
-        for (int i = 0; buffer[i] != '\0'; i++) {
-            if (isalpha(buffer[i]))
-                letterCount++;
-            if (letterCount - 1 == text->animation.currentFrame) 
-                buffer[i + 1] = '\0' ;
+        if (existe(anim->hollowTexture)) {
+            SDL_DestroyTexture(anim->hollowTexture);
+            anim->hollowTexture = NULL ;
         }
 
-        // Création d'une surface SDL avec le texte et sa couleur
-        SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(text->font, buffer, anim->textColor, 0);
-        if (surface == NULL) {
-            fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
-            return;
-        }
+        int width, height ;
+        TTF_SizeUTF8(text->font, buffer, &width, &height);
 
-        // Création d'une texture SDL à partir de la surface
-        SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);
-        if (texture == NULL) {
-            fprintf(stderr, "Erreur creation texture from surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
-            SDL_FreeSurface(surface);
-            return;
-        }
-        SDL_FreeSurface(surface); // Libération de la surface car elle n'est plus nécessaire
+        anim->texture = create_TTF_Texture(text->font, buffer, anim->textColor) ;
+        SDL_QueryTexture(anim->texture, NULL, NULL, &width, &height);
+        
+        anim->hollowTexture = create_TTF_Texture(text->font, buffer, anim->hollowColor) ;
+        SDL_QueryTexture(anim->hollowTexture, NULL, NULL, &width, &height);
 
-        // Récupération des dimensions de la texture pour ajuster la position de l'affichage
-        SDL_QueryTexture(texture, NULL, NULL, &anim->position.w, &anim->position.h);
-        text->animation.texture = texture;
+        anim->position.w = width ;
+        anim->position.h = height ;
 
-        // Si le texte a une ombre, on crée également une texture pour cette ombre
-        if (text->animation.hollow == TRUE) {
-
-            // Libère la mémoire de la texture précédente si existante
-            if (anim->hollowTexture != NULL) {
-                SDL_DestroyTexture(anim->hollowTexture);
-                anim->hollowTexture = NULL ;
-            }
-
-            // Création d'une surface SDL avec le texte et la couleur de l'ombre
-            surface = TTF_RenderUTF8_Blended_Wrapped(text->font, buffer, anim->hollowColor, 0);
-            if (surface == NULL) {
-                fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
-                return;
-            }
-
-            // Création d'une texture SDL à partir de la surface de l'ombre
-            texture = SDL_CreateTextureFromSurface(renderer, surface);
-            if (texture == NULL) {
-                fprintf(stderr, "Erreur creation texture from surface du `Text_t` %s : %s\n", text->string, SDL_GetError());
-                SDL_FreeSurface(surface);
-                return;
-            }
-            SDL_FreeSurface(surface);
-
-            // Récupération des dimensions de la texture pour ajuster la position de l'ombre
-            SDL_QueryTexture(texture, NULL, NULL, &anim->position.w, &anim->position.h);
-            text->animation.hollowTexture = texture;
-        }
+        free(buffer);
     }
+}
+
+
+
+/**
+ * 
+ */
+void text_change_hollow (Text_t * text, int boolean, SDL_Color color, TypeHollow_t dir) {
+
+    TextAnim_t * anim = &text->animation ;
+
+    anim->hollow = boolean ;
+    anim->hollowColor = color ;
+    anim->hollowDir = dir ;
 }

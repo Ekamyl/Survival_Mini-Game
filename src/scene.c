@@ -91,9 +91,9 @@ void DESKTOP_load(Scene_t *self) {
     info->nbText = nbText ;
 
     // création des text 
-    SDL_Color color = {255, 255, 255, 255} ;
+    SDL_Color blanc = {255, 255, 255, 255} ;
     SDL_Rect position = {50, WINDOW_HEIGHT / 2, 100, 100} ;
-    tabText[0] = create_text ("Tu n'iras nul part", font, &color, &position) ;
+    tabText[0] = create_text ("T une merde bahaahhahhahahah", font, &blanc, &position) ;
     if (tabText[0] == NULL) {
         free(info);
         destroy_desktop(&desktop);
@@ -103,6 +103,9 @@ void DESKTOP_load(Scene_t *self) {
         self->data = NULL;
         return ;
     }
+
+    SDL_Color rouge = {150, 0, 0, 255} ;
+    text_change_hollow(tabText[0], TRUE, rouge, BOTTOM_LEFT);
 
     // Stockage dans `self->data`
     self->data[0] = info ;
@@ -181,6 +184,7 @@ void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
 
     InfoScene_t * info = (InfoScene_t *)self->data[0] ;
     Desktop_t * desktop = self->data[1] ;
+    int iconClicked ;
     
     while (SDL_PollEvent(event)) {
         switch (event->type) {
@@ -204,10 +208,10 @@ void DESKTOP_handleEvents (Scene_t * self, SDL_Event * event) {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN :
-                element_update(desktop, event);
+                iconClicked = element_update(desktop, event);
                 break;
             case SDL_MOUSEBUTTONUP :
-                element_update(desktop, event);
+                iconClicked = element_update(desktop, event);
                 break;
             case SDL_MOUSEMOTION : 
                 move_element(desktop, event);
