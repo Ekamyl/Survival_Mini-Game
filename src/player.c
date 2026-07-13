@@ -34,6 +34,8 @@ Player_t * player_constructor () {
     player->actionState = IDLE;
     player->animState = 0;
 
+    player->pv = 3 ;
+
     return player;
 }
 
@@ -42,6 +44,9 @@ void player_destructor (Player_t ** player) {
     SDL_DestroyTexture((*player)->body.texture);
     free(*player);
     *player = NULL;
+}
+void player_destructor_cb (void * player) {
+    player_destructor(player);
 }
 
 
@@ -66,6 +71,9 @@ void update_player_anim_state (Player_t * player) {
 }
 
 
+/**
+ * Update la vélocité verticale du player et met a jour sa position en fonction de la vélocité.
+ */
 void update_player (Player_t * player, SDL_FRect * ground) {
     // gere la hauteur du personnage en fonction du saut
     if (!player->body.onGround) {
@@ -94,6 +102,9 @@ void update_player (Player_t * player, SDL_FRect * ground) {
 }
 
 
+/**
+ * Ne change pas la position du joueur, uniquement sa vélocité.
+ */
 void handle_input (const uint8_t * keys, Player_t * player) {
     if (keys[SDL_SCANCODE_D] && !keys[SDL_SCANCODE_A]) {
         // if (player->body.vx < 0 && (player->body.vx == player->vMax)) 
@@ -102,7 +113,7 @@ void handle_input (const uint8_t * keys, Player_t * player) {
         player->body.vx += player->acceleration ;
         if (player->body.vx > player->vMax) 
             player->body.vx = player->vMax;
-    }
+    } 
     else if (keys[SDL_SCANCODE_A] && !keys[SDL_SCANCODE_D]) {
         // if (player->body.vx > 0 && (player->body.vx == player->vMax)) 
         //     player->body.vx = -player->body.vx;
@@ -126,5 +137,5 @@ void handle_input (const uint8_t * keys, Player_t * player) {
     if (keys[SDL_SCANCODE_SPACE] && player->body.onGround == TRUE) {
         player->body.jump = JUMP_FORCE;
         player->body.onGround = FALSE;
-    }
+    } 
 }

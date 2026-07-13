@@ -2,106 +2,130 @@
 #include "../include/main.h"
 #include "../include/map.h"
 #include "../include/texture_loader.h"
+#include "../include/list.h"
+#include "../include/player.h"
+#include "../include/scene.h"
 
-
-void init_elements_scene0 (Map_t * map){
-    map->listElements[ERROR_WINDOW].hidden = TRUE;
-
-    map->listElements[ICON_GAME].position.x = 50 + (rand() % 30 * 8);
-    map->listElements[ICON_GAME].position.y = 50 + (rand() % 30 * 8);
-}
-
-/**
- * Renvoi la liste des Objet_t de la scene actuel. 
- * Recupere les donnes des Objet_t dans un fichier .txt
- */
-DesktopElement_t * load_elements(int nbObject) {
-    
-    DesktopElement_t * list = malloc(sizeof(DesktopElement_t) * nbObject);
-
-    char fileName[128];
-    sprintf(fileName, "assets/donneesObjectScene%d.txt", gameStatus.scene);
-
-    int x, y, w, h ;
-    char buffer[256];
-
-    FILE * file = fopen(fileName, "r");
-    
-    printf("srcrect du fichier %s :\n", fileName);
-    for (int i = 0; i < nbObject; i++) {
-        fscanf(file, "{%d, %d, %d, %d}", &x, &y, &w, &h);
-        fgets(buffer, sizeof(buffer), file);
-        
-        list[i].srcrect.x = x;
-        list[i].srcrect.y = y;
-        list[i].srcrect.w = w;
-        list[i].srcrect.h = h;
-
-        list[i].hidden = FALSE;
-        list[i].clicked = FALSE;
-        list[i].dragged = FALSE;
-        
-        printf("x = %d; y = %d; w = %d; h = %d\n", list[i].srcrect.x, list[i].srcrect.y, list[i].srcrect.w, list[i].srcrect.h = h);
-    }
-
-    
-    printf("dstrect du fichier %s :\n", fileName);
-    for (int i = 0; i < nbObject; i++) {
-        fscanf(file, "{%d, %d, %d, %d}", &x, &y, &w, &h);
-        fgets(buffer, sizeof(buffer), file);
-
-        list[i].position.x = x;
-        list[i].position.y = y;
-        list[i].position.w = w;
-        list[i].position.h = h;
-
-        printf("x = %d; y = %d; w = %d; h = %d\n", list[i].position.x, list[i].position.y, list[i].position.w, list[i].position.h = h);
-    }
-
-    fclose(file);
-
-    return list;
-}
-
+ 
 Map_t * map_constructor () {
+
     Map_t * map = malloc(sizeof(Map_t));
     if (map == NULL) {
         printf("Erreur malloc map : %s\n", SDL_GetError());
         return NULL;
     }
-    
-    // donne un zone de cillison pour le sol 
-    SDL_FRect ground = {
-        .x = 0,
-        .y = BACKGROUND_HEIGHT - GROUND_HEIGHT,
-        .w = GROUND_WIDTH,
-        .h = GROUND_HEIGHT
-    };
-    map->ground = ground;
-
+ 
     // charge l'image de fond
-    map->background = load_png("assets/background.png");
-    if (map->background == NULL) {
-        return NULL;
-    }
+    map->background = NULL ;
 
-    // alloue de la memoire pour le tableau d'objets present sur la map 
-    map->nbObject = 8;
-    map->listElements = load_elements(map->nbObject);
-
-    // // charge texture objet 
-    map->objectsTexture = load_png("assets/spritesheetScene0.png");
+    map->listSpriteSheet = create_list(SDL_DestroyTexture_cb) ;
+    map->listObjects = create_list(destroy_mapObj_cb) ;
 
 
     return map;
 }
 
 void map_destructor (Map_t ** map) {
-    SDL_DestroyTexture((*map)->background);
-    SDL_DestroyTexture((*map)->objectsTexture);
     
-    free((*map)->listElements);
-    (*map)->listElements = NULL;
-    free(*map);
-    *map = NULL;
+    if (map != NULL && existe(map)) {
+        
+        SDL_DestroyTexture((*map)->background);
+
+        destroy_list(&(*map)->listSpriteSheet) ;
+        destroy_list(&(*map)->listObjects) ;
+
+        free(*map);
+        *map = NULL;
+    }
+}
+void map_destructor_cb (void * map) {
+    map_destructor(map);
+}
+
+
+MapObj_t * create_mapObj () {
+
+    MapObj_t * object = malloc(sizeof(MapObj_t)) ;
+    if (!existe(object)) {
+        fprintf(stderr, "Erreur malloc de MapObj_t\n");
+        return NULL ;
+    }
+
+    return object ;
+}
+
+
+void destroy_mapObj (MapObj_t ** object) {
+
+    if (object != NULL && existe(*object)) {
+
+        free(*object);
+        *object = NULL ;
+    }
+}
+void destroy_mapObj_cb (void * object) {
+    destroy_mapObj(object);
+}
+
+
+void map_update (Scene_t * scene, Map_t * map, Player_t * player) {
+
+    if (scene == NULL || map == NULL || player == NULL) {
+        printf("Impossible d'update la map, un des parametres est NULL\n");
+        return ;
+    }
+
+
+    // met a jour la position et l'animation de chaque objet
+    for (int i = 0; i < map->listObjects->size; i++) {
+
+        MapObj_t * object = map->listObjects->item(map->listObjects, i) ;
+
+
+        if (object->sprite.hidden == FALSE) {
+            
+            texture_update(&object->sprite);
+
+            object->sprite.position.x += object->vx ;
+            object->sprite.position.y += object->vy ;
+
+            SDL_Rect objectHitbox = {
+                object->sprite.position.x, 
+                object->sprite.position.y + object->sprite.position.h - 25, 
+                object->sprite.position.w, 
+                25 
+            } ;
+            SDL_Rect playerHitbox = {
+                player->body.position.x + player->body.position.w / 2 - (30 / 2), 
+                player->body.position.y, 
+                30,
+                player->body.position.h
+            } ;
+            if (SDL_Rect_check_collision(&playerHitbox, &objectHitbox)) {
+                mapObj_action(scene, map, player, object->idAction);
+                map->listObjects->remove(map->listObjects, i);
+            }
+
+            SDL_Rect groundRect = {map->ground.x, map->ground.y, map->ground.w, map->ground.h} ;
+            if (SDL_Rect_check_collision(&groundRect, &objectHitbox)) {
+                map->listObjects->remove(map->listObjects, i);
+            }
+        }
+    }
+}
+
+
+void mapObj_action (Scene_t * scene, Map_t * map, Player_t * player, uint8_t idAction) {
+
+    switch (idAction) {
+    
+    case ACT_ID_LOSS_PV :
+        printf("action 0 effectuee sur map\n");
+        if (player->pv > 0)
+            player->pv--;
+        break;
+    
+    default:
+        break;
+    }
 }

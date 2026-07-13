@@ -1,60 +1,62 @@
-# Compilateur
-CC = gcc
+# Définition du compilateur
+CC := gcc
+
+# Détection du système d'exploitation
+UNAME_S := $(shell uname -s)
 
 # Dossiers
-SRC_DIR = src
-INCLUDE_DIR = include
-ASSETS_DIR = assets
-BIN_DIR = bin
+SRC_DIR := src
+INC_DIR := include
+BIN_DIR := bin
+ASSETS_DIR := assets
 
-# Fichiers sources et objets
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-OBJ_FILES = $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%.o, $(SRC_FILES))
-HEADER_FILES = $(wildcard $(INCLUDE_DIR)/*.h)
+# Recherche automatique des fichiers source (.c) dans tous les sous-dossiers
+SRC_FILES := $(shell find $(SRC_DIR) -type f -name '*.c')
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%.o, $(SRC_FILES))
+HEADER_FILES := $(shell find $(INC_DIR) -type f -name '*.h')
 
-# Options de compilation
-CFLAGS = `sdl2-config --cflags`
-LDFLAGS = `sdl2-config --libs` -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+# Options de compilation pour Linux et macOS
+CFLAGS := -I$(INC_DIR) `sdl2-config --cflags`
+LDFLAGS := `sdl2-config --libs` -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 
-# Options de débogage
-DEBUG_FLAGS = -g
+# Gestion spécifique pour macOS
+ifeq ($(UNAME_S), Darwin)
+    CFLAGS := -I$(INC_DIR) -F/Library/Frameworks
+    LDFLAGS := -F/Library/Frameworks -framework SDL2 -framework SDL2_image -framework SDL2_ttf -framework SDL2_mixer -Wl,-rpath,/Library/Frameworks
+endif
 
-# Nom de l'exécutable
-EXECUTABLE = $(BIN_DIR)/introGame
-
-# Variable pour activer/désactiver le mode débogage
-DEBUG = 0
-
-# Si DEBUG est activé, on ajoute les flags de débogage
+# Debug Mode
+DEBUG_FLAGS := -g
 ifeq ($(DEBUG), 1)
     CFLAGS += $(DEBUG_FLAGS)
 endif
+
+# Nom de l'exécutable
+EXECUTABLE := $(BIN_DIR)/introGame
 
 # Règle par défaut
 all: $(EXECUTABLE)
 
 # Compilation de l'exécutable
 $(EXECUTABLE): $(OBJ_FILES)
+	@mkdir -p $(BIN_DIR)
 	$(CC) $(OBJ_FILES) $(LDFLAGS) -o $@
 
 # Compilation des fichiers objets
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c $(HEADER_FILES)
-	@mkdir -p $(BIN_DIR)  # Crée le répertoire bin s'il n'existe pas
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Nettoyage
 clean:
 	rm -rf $(BIN_DIR)/*
 
-# Exécution du programme
-exe:
+# Exécution
+run: all
 	./$(EXECUTABLE)
 
-# Cible pour compiler en mode débogage
+# Compilation en mode Debug
 debug:
 	$(MAKE) DEBUG=1
 
-apple : 
-	gcc src/*.c -o bin/introGame -F/Library/Frameworks -framework SDL2 -framework SDL2_image -framework SDL2_ttf -framework SDL2_mixer -Wl,-rpath,/Library/Frameworks
-
-.PHONY: all clean exe debug
+.PHONY: all clean run debug

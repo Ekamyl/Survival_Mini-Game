@@ -1,11 +1,23 @@
 #include "../include/lib.h"
 #include "../include/main.h"
 #include "../include/texture_loader.h" 
-#include "../include/map.h"
-#include "../include/camera.h"
-#include "../include/player.h"
 #include "../include/render.h"
 #include "../include/text.h"
+#include "../include/list.h"
+
+
+void draw_rect_filled (SDL_Rect rect, SDL_Color color) {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+
+void draw_rect_border (SDL_Rect rect, SDL_Color color) {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderDrawRect(renderer, &rect);
+}
 
 
 /**
@@ -13,18 +25,71 @@
  */
 err_t draw_text (Text_t * text) {
 
-    SDL_Rect posHollow = {text->animation.position.x - 3, text->animation.position.y + 3, text->animation.position.w, text->animation.position.h} ;
+    if (text->hidden == FALSE) {
+        SDL_Rect posHollow = {text->animation.position.x - 3, text->animation.position.y + 3, text->animation.position.w, text->animation.position.h} ;
 
-    if (text->animation.hollow == TRUE && existe(text->animation.hollowTexture)) {
-        SDL_RenderCopy(renderer, text->animation.hollowTexture, NULL, &posHollow);
-    }
-    
-    if (existe(text->animation.texture)) {
-        SDL_RenderCopy(renderer, text->animation.texture, NULL, &text->animation.position);
+        if (text->animation.hollow == TRUE && existe(text->animation.hollowTexture)) {
+            SDL_RenderCopy(renderer, text->animation.hollowTexture, NULL, &posHollow);
+        }
+        
+        if (existe(text->animation.texture)) {
+            SDL_RenderCopy(renderer, text->animation.texture, NULL, &text->animation.position);
+        }
     }
 
     return NO_ERR ;
 } 
+
+
+void draw_texture (Texture_t * texture, Camera_t * camera) {
+
+    if (existe(texture)) {
+
+        if (texture->hidden == FALSE) {
+
+            double angle ;
+            SDL_Rect dstrect = {texture->position.x - camera->x, texture->position.y - camera->y, texture->position.w, texture->position.h} ;
+            switch (texture->typeAnim) {
+                case NONE : 
+                    if (!compare_SDL_Rect(texture->srcrect, (SDL_Rect){0, 0, 0, 0})) {
+                        SDL_RenderCopy(renderer, texture->texture, NULL, &dstrect);
+                    }
+                    else { 
+                        SDL_RenderCopy(renderer, texture->texture, &texture->srcrect, &dstrect);
+                    }
+                    break;
+                    
+                case DEFAULT : 
+                    if (!compare_SDL_Rect(texture->srcrect, (SDL_Rect){0, 0, 0, 0})) {
+                        SDL_RenderCopy(renderer, texture->texture, NULL, &dstrect);
+                    }
+                    else { 
+                        texture->srcrect.x = texture->srcrect.w * texture->currentFrame ;
+                        SDL_RenderCopy(renderer, texture->texture, &texture->srcrect, &dstrect);
+                    }
+                    break;
+                
+                case ROTATION :
+                    angle = (360.0 / (texture->numFrames)) * texture->currentFrame ;
+                
+                    if (!compare_SDL_Rect(texture->srcrect, (SDL_Rect){0, 0, 0, 0})) {
+                        SDL_RenderCopyEx(renderer, texture->texture, NULL, &dstrect, angle, NULL, SDL_FLIP_NONE);
+                    }
+                    else { 
+                        SDL_RenderCopyEx(renderer, texture->texture, &texture->srcrect, &dstrect, angle, NULL, SDL_FLIP_NONE);
+                    }
+                    break;
+                
+                default :
+                    break;
+            }
+            
+        }
+    }
+    else {
+        printf("Impossible d'afficer la texture car la texture est NULL\n");
+    }
+}
 
 
 int mapPrevX, mapPrevY;
@@ -36,6 +101,11 @@ void draw_map (Map_t * map, Camera_t * camera) {
     SDL_Rect srcrect = {camera->x, camera->y, camera->width, camera->height};
     if ((srcrect.x + srcrect.w) > BACKGROUND_WIDTH) srcrect.x = BACKGROUND_WIDTH - srcrect.w;
     SDL_RenderCopy(renderer, map->background, &srcrect, NULL);
+
+    for (int i = 0; i < map->listObjects->size; i++) {
+        MapObj_t * object = map->listObjects->item(map->listObjects, i) ;
+        draw_texture(&object->sprite, camera);
+    }
 
     // methode affichage complet de la map sur une position bien precise 
     // SDL_FRect dstrect = {-camera->x, -camera->y, BACKGROUND_WIDTH, BACKGROUND_HEIGHT};
@@ -66,24 +136,120 @@ void draw_background (Map_t * map, Camera_t * camera) {
 
 
 /**
+ * affiche les widgets uniquement.
+ */
+void draw_widgets (Window_t * window) {
+
+    SDL_Rect winPosition = window->position ;
+    Widget_t * tabWidget = window->tabWidget ;
+    for (int i = 0; i < window->widgetCount; i++) {
+
+        Widget_t widget = tabWidget[i] ;
+        SDL_Rect dstrect = {
+            .x = widget.relPosition.x + window->position.x, 
+            .y = widget.relPosition.y + window->position.y, 
+            .w = widget.relPosition.w, 
+            .h = widget.relPosition.h
+        };
+        switch(widget.type) {
+
+        case WIDGET_ICON :;
+            SDL_RenderCopy(renderer, window->spriteSheet, &widget.icon.srcrect, &dstrect);
+
+            if (widget.icon.isClicked) {
+                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                
+                SDL_SetRenderDrawColor(renderer, 0, 0, 150, 100);
+                SDL_RenderDrawRect(renderer, &dstrect);
+
+                SDL_SetRenderDrawColor(renderer, 0, 0, 100, 100);
+                SDL_RenderFillRect(renderer, &dstrect);
+            }
+            break;
+
+        case WIDGET_BUTTON :;
+            if (compare_SDL_Rect(widget.button.srcrect, (SDL_Rect){0, 0, 0, 0}) != 0) 
+                SDL_RenderCopy(renderer, window->spriteSheet, &widget.button.srcrect, &dstrect);
+
+            SDL_Point mouse ; 
+            SDL_GetMouseState(&mouse.x, &mouse.y) ;
+            // Met en surbrillance lorsque la souris survole le bouton 
+            if (SDL_PointInRect(&mouse, &dstrect)) {
+                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+                SDL_SetRenderDrawColor(renderer, 221, 255, 252, 200);
+                SDL_RenderFillRect(renderer, &dstrect);
+            }
+            break; 
+
+        case WIDGET_TEXT :;
+            int width, height ;
+            SDL_QueryTexture(widget.text.texture, NULL, NULL, &width, &height);
+
+            dstrect.x = widget.relPosition.x + window->position.x ;
+            dstrect.y = widget.relPosition.y + window->position.y ;
+            dstrect.w = width ;
+            dstrect.h = height ;
+
+            if (width > widget.relPosition.w) {
+                dstrect.w = widget.relPosition.w ;
+            }
+            if (height > widget.relPosition.h) {
+                dstrect.h = widget.relPosition.h ;
+            }
+
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, window->theme.bgColor.r, window->theme.bgColor.g, window->theme.bgColor.b, window->theme.bgColor.a);
+            
+            SDL_Rect bgDstRect = {
+                .x = widget.relPosition.x + window->position.x, 
+                .y = widget.relPosition.y + window->position.y, 
+                .w = widget.relPosition.w, 
+                .h = widget.relPosition.h
+            };
+            SDL_RenderFillRect(renderer, &bgDstRect);
+
+            SDL_RenderCopy(renderer, widget.text.texture, NULL, &dstrect);
+            break;
+
+        default : 
+            break;
+        }
+    }
+}
+/**
+ * Affiche la fenetre.
+ */
+void draw_window (Window_t * window) { 
+
+    SDL_Rect srcrect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT} ;
+    SDL_RenderCopy(renderer, window->background, &srcrect, &window->position);
+
+    draw_widgets(window);
+}
+/**
+ * afiche une des 4 portions du bakcground de la fenetre (utile que pour les fenetre qui doivent faire un effet de glitch)
+ */
+void draw_window_glitched (Window_t * window) {
+
+    SDL_Rect srcrect = {WINDOW_WIDTH * (rand() % 2), WINDOW_HEIGHT * (rand() % 2), WINDOW_WIDTH, WINDOW_HEIGHT} ;
+    SDL_RenderCopy(renderer, window->background, &srcrect, &window->position);
+
+    draw_widgets(window);
+}
+/**
  * Pour afficher les elements relativement a la fenetre et non pas a la camera, passée NULL a camera.
  */
 void draw_desktop (Desktop_t * desktop) {
 
-    SDL_RenderCopy(renderer, desktop->background, NULL, NULL);
+    draw_window_glitched(&desktop->mainWindow);
 
-    for (int i = 0; i < desktop->nbElem; i++) {
-        // affiche l'element si il est visible
-        if (desktop->elements[i].hidden == FALSE) {
-            SDL_RenderCopy(renderer, desktop->elementSpritesheet, &desktop->elements[i].srcrect, &desktop->elements[i].position);
-
-            if (desktop->elements[i].clicked == TRUE) {
-                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(renderer, 231, 244, 244, 100);
-
-                SDL_RenderFillRect(renderer, &desktop->elements[i].position);
-            }
-        }
+    List_t * listWindow = desktop->listWindow ;
+    for (int i = 0; i < listWindow->size; i++) {
+        Window_t * window = listWindow->item(listWindow, i) ;
+        
+        if (window->isActive)
+            draw_window(window);
     }
 }
 
@@ -129,6 +295,143 @@ void draw_player (Player_t * player, Camera_t * camera) {
     // dessine la zone de collision du player 
     // SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     // SDL_RenderDrawRect(renderer, &dstrect);
+}
+
+
+void draw_player_pv (Player_t * player, SDL_Texture * texture) {
+
+    if (player == NULL || texture == NULL) {
+        printf("Impossible d'afficher les pv car player ou texture NULL\n");
+        return ;
+    }
+
+
+    SDL_Rect srcrect = {0, 0, 16, 16} ;
+    SDL_Rect dstrect = {30, 20, 48, 48} ;
+
+    int i = 0 ;
+
+    // affiche les coeurs plein 
+    while (i < player->pv) {
+        SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+        dstrect.x += dstrect.w ;
+        i++;
+    }
+
+    // pour afficher une autre partie de la texture 
+    srcrect.x += srcrect.w * 2 ;
+
+    // affiche les coeurs vides 
+    while (i < 3) {
+        SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+        dstrect.x += dstrect.w ;
+        i++;
+    }
+}
+
+
+static uint8_t ptSizeNumber ;
+static SDL_Texture * numberTexture = NULL ;
+void generate_number_texture (uint8_t ptSize, SDL_Color color) {
+
+    if (numberTexture != NULL) {
+        SDL_DestroyTexture(numberTexture);
+        numberTexture = NULL ;
+    }
+
+    if (numberTexture == NULL) {
+
+        TTF_Font * font = TTF_OpenFont("assets/PressStart2P-Regular.ttf", ptSize) ;
+
+        numberTexture = create_TTF_Texture(font, "0123456789", color) ;
+        ptSizeNumber = ptSize ;
+
+        TTF_CloseFont(font);
+    }
+}
+void destroy_number_texture () {
+    
+    if (numberTexture != NULL) {
+        SDL_DestroyTexture(numberTexture);
+        numberTexture = NULL ;
+    }
+}
+
+
+static uint8_t ptSizeLetter ;
+static SDL_Texture * letterTexture = NULL ;
+void generate_letter_texture (uint8_t ptSize, SDL_Color color) {
+
+    if (letterTexture != NULL) {
+        SDL_DestroyTexture(letterTexture);
+        letterTexture = NULL ;
+    }
+
+    if (letterTexture == NULL) {
+
+        TTF_Font * font = TTF_OpenFont("assets/PressStart2P-Regular.ttf", ptSize) ;
+
+        letterTexture = create_TTF_Texture(font, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", color) ;
+        ptSizeLetter = ptSize ;
+
+        TTF_CloseFont(font);
+    }
+}
+void destroy_letter_texture () {
+    
+    if (letterTexture != NULL) {
+        SDL_DestroyTexture(letterTexture);
+        letterTexture = NULL ;
+    }
+}
+
+
+/**
+ * affiche en seconde le temp passer en param
+ */
+void draw_timer(uint32_t time, SDL_Rect dstrect, TTF_Font * font, SDL_Color color) {
+
+    uint32_t seconds = time / 1000;
+    uint32_t milliseconds = time % 1000;
+
+    char buffer[256];
+    sprintf(buffer, "%02u.%03u", seconds, milliseconds);
+
+    SDL_Texture *texture = create_TTF_Texture(font, buffer, color);
+    
+    SDL_QueryTexture(texture, NULL, NULL, &dstrect.w, &dstrect.h);
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+
+    SDL_DestroyTexture(texture);
+}
+
+
+void draw_time (SDL_Rect dstrect, TTF_Font * font, SDL_Color color) {
+
+    time_t timestamp ;
+    struct tm * local_time ;
+
+    time(&timestamp);
+
+    local_time = localtime(&timestamp) ;
+
+
+    char buffer[256] ;
+    sprintf(buffer, "%02d:%02d\n%02d/%02d/%d", 
+        local_time->tm_hour,
+        local_time->tm_min,
+        local_time->tm_mday,
+        local_time->tm_mon + 1,
+        local_time->tm_year + 1900
+    );
+
+
+    SDL_Texture * texture = create_TTF_Texture(font, buffer, color) ;
+
+    SDL_QueryTexture(texture, NULL, NULL, &dstrect.w, &dstrect.h);
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+
+    SDL_DestroyTexture(texture);
 }
 
 
@@ -185,7 +488,7 @@ void destroy_desktop_glitch_texture () {
 }
 
 
-void apply_glitch(Camera_t * camera, SDL_Texture *texture, int width, int height) {
+void apply_glitch(Camera_t * camera, SDL_Texture *texture) {
     
     int axis = rand() % 2 ; // 0 pour horizontal, 1 pour vertical
 
@@ -236,19 +539,10 @@ void draw_scene0 (Camera_t * camera, Map_t * map) {
 // retourne 1 en cas d'erreu ou 0 si aucune erreur 
 int draw (Camera_t * camera, Player_t * player, Map_t * map) {
     
-    switch (gameStatus.scene) {
-        case 0 : 
-            draw_scene0(camera, map);
-            break;
-        case 1 : 
-            draw_map(map, camera);
-            draw_player(player, camera);
-            // if (rand() % 10 > 6)
-            //     apply_glitch(camera, map->background, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
-            break;
-        default : 
-            break;
-    }
+    draw_map(map, camera);
+    draw_player(player, camera);
+    // if (rand() % 10 > 6)
+    //     apply_glitch(camera, map->background);
 
     return 0;
 }

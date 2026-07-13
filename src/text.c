@@ -1,9 +1,11 @@
 #include "../include/lib.h"
 #include "../include/main.h"
 #include "../include/window.h"
-#include "../include/desktop.h"
+#include "../include/gui.h"
 #include "../include/render.h"
 #include "../include/text.h"
+#include "../include/dictionary.h"
+#include "../include/list.h"
 
 
 /**
@@ -11,7 +13,7 @@
  * 
  * Cette fonction alloue dynamiquement une structure `Text_t`, copie le texte fourni,
  * initialise les paramètres d'affichage et configure l'animation associée.
- * 
+ *  
  * @param string   Le texte à afficher.
  * @param font     La police de caractères utilisée.
  * @param color    La couleur du texte.
@@ -19,7 +21,7 @@
  * 
  * @return Un pointeur vers la structure `Text_t` créée, ou NULL en cas d'échec d'allocation.
  */
-Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, SDL_Rect * position) {
+Text_t * create_text (const char * string, TTF_Font * font, SDL_Color color, SDL_Rect position) {
 
     // Allocation dynamique de la structure `Text_t`
     Text_t * text = malloc(sizeof(Text_t));
@@ -48,12 +50,16 @@ Text_t * create_text (const char * string, TTF_Font * font, SDL_Color * color, S
     // Assignation de la police de caractères
     text->font = font;
 
+    text->hidden = FALSE ;
+
     // Initialisation des paramètres de l'animation du texte
-    text->animation.textColor = *color;   // Assignation de la couleur du texte
-    text->animation.position = *position; // Position définie par le paramètre
+    text->animation.texture = NULL ;
+    text->animation.textColor = color;   // Assignation de la couleur du texte
+    text->animation.position = position; // Position définie par le paramètre
     text->animation.needChange = TRUE ;   // Texture pas à jour au départ
 
     // Initialisation des paramètres d'ombre (désactivée par défaut)
+    text->animation.hollowTexture = NULL ;
     text->animation.hollow = FALSE;           // Pas d'ombre
     text->animation.hollowColor.r = 0;        // Couleur noire
     text->animation.hollowColor.g = 0;
@@ -113,11 +119,8 @@ void destroy_text (Text_t ** text) {
         *text = NULL; // Évite un pointeur suspendu en mettant `text` à NULL
     }
 }
-
-
-
-double genererValeurSinusoidale(double temps, double amplitude, double frequence) {
-    return amplitude * sin(2 * M_PI * frequence * temps);
+void destroy_text_cb (void * text) {
+    destroy_text(text);
 }
 
 
@@ -131,7 +134,7 @@ SDL_Texture * create_TTF_Texture (TTF_Font * font, const char * string, SDL_Colo
         return NULL ;
 
     // Création d'une surface SDL avec le texte et sa couleur
-    SDL_Surface * surface = TTF_RenderUTF8_Blended(font, string, color);
+    SDL_Surface * surface = TTF_RenderUTF8_Blended_Wrapped(font, string, color, 10000);
     if (surface == NULL) {
         fprintf(stderr, "Erreur malloc surface du `Text_t` %s : %s\n", string, SDL_GetError());
         return NULL ;
@@ -168,41 +171,20 @@ void text_update (Text_t * text) {
         return ;
     }
 
+    // les text non visible ne subissent pas d'update
+    if (text->hidden == TRUE) {
+        return ;
+    }
+
     // Récupération de la structure d'animation associée au texte
     TextAnim_t * anim = &text->animation;
 
-    // Incrémentation du compteur de frames
-    anim->frameCount++; 
-    if (anim->frameCount == anim->animationSpeed) {
-        anim->frameCount = 0 ; // Réinitialisation du compteur
-
-        // Si l'animation est active, on passe au frame suivant et on marque un besoin de mise à jour
-        if (anim->playing == TRUE) {
-            do {
-                anim->currentFrame++;
-            } while (!isalpha(text->string[anim->currentFrame])) ;
-            anim->needChange = TRUE; // Indique qu'on doit redessiner la texture
-        }
-    }
-
-    // Vérifie si l'animation a dépassé le nombre total de frames
-    if (anim->currentFrame > anim->numFrames) {
-
-        // Si l'animation est en boucle, on la remet à zéro
-        if (anim->loop == TRUE) {
-            anim->currentFrame = 0;
-            anim->needChange = TRUE;
-        }
-        else {
-            anim->playing = FALSE; // Sinon, on arrête l'animation
-        }
-    }
-
     // Si un changement est nécessaire, on met à jour le `srcrect`
-    if (anim->needChange == TRUE) {
+    if (anim->needChange == TRUE && anim->frameCount == 0) {
 
         char * buffer = malloc(sizeof(char) * (anim->currentFrame + 1)) ;
         strncpy(buffer, text->string, anim->currentFrame);
+        buffer[anim->currentFrame] = '\0';
 
         if (existe(anim->texture)) {
             SDL_DestroyTexture(anim->texture);
@@ -217,18 +199,64 @@ void text_update (Text_t * text) {
         TTF_SizeUTF8(text->font, buffer, &width, &height);
 
         anim->texture = create_TTF_Texture(text->font, buffer, anim->textColor) ;
-        SDL_QueryTexture(anim->texture, NULL, NULL, &width, &height);
+        //SDL_QueryTexture(anim->texture, NULL, NULL, &width, &height);
         
-        anim->hollowTexture = create_TTF_Texture(text->font, buffer, anim->hollowColor) ;
-        SDL_QueryTexture(anim->hollowTexture, NULL, NULL, &width, &height);
+        if (anim->hollow == TRUE) {
+            anim->hollowTexture = create_TTF_Texture(text->font, buffer, anim->hollowColor) ;
+            //SDL_QueryTexture(anim->hollowTexture, NULL, NULL, &width, &height);
+        }
 
         anim->position.w = width ;
         anim->position.h = height ;
 
         free(buffer);
     }
-}
 
+
+    // Incrémentation du compteur de frames
+    anim->frameCount++; 
+    if (anim->frameCount == anim->animationSpeed) {
+        anim->frameCount = 0 ; // Réinitialisation du compteur
+
+        // Si l'animation est active, on passe au frame suivant et on marque un besoin de mise à jour
+        if (anim->playing == TRUE) {
+            do {
+                anim->currentFrame++;
+            } while (text->string[anim->currentFrame] == ' ') ;
+            anim->needChange = TRUE; // Indique qu'on doit redessiner la texture
+        }
+        else {
+            anim->needChange = FALSE ;
+        }
+    }
+
+    // Vérifie si l'animation a dépassé le nombre total de frames
+    if (anim->currentFrame > anim->numFrames) {
+
+        // Si l'animation est en boucle, on la remet à zéro
+        if (anim->loop == TRUE) {
+            anim->currentFrame = 0;
+            anim->needChange = TRUE;
+        }
+        else {
+            anim->currentFrame = anim->numFrames ;
+            anim->playing = FALSE; // Sinon, on arrête l'animation
+            anim->needChange = TRUE ;
+        }
+    }
+}
+void text_list_update (List_t * list, const char * dataPath) {
+    // Vérifie si le text existe 
+    if (!existe(list)) {
+        return ;
+    }
+
+    for (int i = 0; i < list->size; i++) {
+
+        Text_t * text = list->item(list, i) ;
+        text_update(text);
+    }
+}
 
 
 /**
@@ -241,4 +269,231 @@ void text_change_hollow (Text_t * text, int boolean, SDL_Color color, TypeHollow
     anim->hollow = boolean ;
     anim->hollowColor = color ;
     anim->hollowDir = dir ;
+
+    text->animation.needChange = TRUE ;
+}
+
+
+void text_change_color (Text_t * text, SDL_Color newColor) {
+
+    if (existe(text)) {
+
+        text->animation.textColor.r = newColor.r ;
+        text->animation.textColor.g = newColor.g ;
+        text->animation.textColor.b = newColor.b ;
+        text->animation.textColor.a = newColor.a ;
+
+        text->animation.needChange = TRUE ;
+    }
+}
+
+
+void text_change_position (Text_t * text, SDL_Rect newPosition) {
+
+    if (existe(text)) {
+
+        text->animation.position.x = newPosition.x ;
+        text->animation.position.y = newPosition.y ;
+        text->animation.position.w = newPosition.w ;
+        text->animation.position.h = newPosition.h ;
+
+        text->animation.needChange = TRUE ;
+    }
+}
+
+
+
+void text_change_type_anim (Text_t * text, TypeTextAnim_t newType) {
+    
+    if (existe(text)) {
+
+        text->animation.typeAnim = newType ;
+
+        text->animation.needChange = TRUE ;
+    }
+}
+
+
+void text_change_visibility (Text_t * text, int hidden) {
+
+    if (existe(text)) {
+
+        text->hidden = hidden ;
+    }
+}
+
+
+void text_change_font (Text_t * text, TTF_Font * newFont) {
+    
+    if (existe(text) && text->font != newFont) {
+
+        text->font = newFont ;
+
+        text->animation.needChange = TRUE ;
+    }
+}
+
+
+void TTF_CloseFont_cb (void * font) {
+    TTF_Font ** pfont = (TTF_Font **)font ;
+    TTF_CloseFont(*pfont);
+    *pfont = NULL ;
+}
+
+
+/**
+ * Insert des donnees text_t dans une liste a partir d'un fichier csv  
+ */
+int load_texts_from_file (const char * dataPath, List_t * listFont, List_t * list) {
+
+    FILE * file = fopen(dataPath, "r") ;
+    if (!existe(file)) {
+        fprintf(stderr, "Erreur ouverture fichier %s\n", dataPath) ;
+        return ERROR;
+    }
+
+    // Variables pour stocker les données lues
+    int r, g, b, a;
+    int x, y, w, h;
+    int hollow, typeHollow ;
+    int hr, hg, hb, ha;
+    char key[64], string[512];
+    int animated, speed ;
+    int fontSize ;
+    int hidden ;
+    char buffer[256];
+
+    // Lecture de la première ligne
+    fgets(buffer, sizeof(buffer), file);
+
+    printf("Lecture fichier : %s\n", dataPath) ;
+
+    // Lecture et initialisation des éléments
+    while (fscanf(file, "%[^;];%[^;];%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d%%", 
+        key, string, &r, &g, &b, &a, &x, &y, &hollow, &hr, &hg, &hb, &ha, &typeHollow, &animated, &speed, &fontSize, &hidden) == 18) {
+
+        Text_t * text = create_text(string, listFont->item(listFont, fontSize), (SDL_Color){r, g, b, a}, (SDL_Rect){x, y, 0, 0}) ;
+        
+        if (!existe(text)) {
+            fprintf(stderr, "Erreur creation du text dans \"%s\"\n", dataPath) ;
+            fclose(file);
+            return ERROR ;
+        } 
+        else {
+            list->set(list, text, list->size);
+        }
+
+        text_change_hollow(text, hollow, (SDL_Color){hr, hg, hb, ha}, typeHollow);
+
+        if (!animated) {
+            text->animation.currentFrame = text->animation.numFrames ;
+            text->animation.loop = FALSE ;
+            text->animation.playing = FALSE ;
+        }
+
+        if (hidden == TRUE) {
+            text_change_visibility(text, hidden);
+        }
+
+        text->animation.animationSpeed = speed ;
+
+        printf("key : %s, string : %s\n", key, string) ;    
+    }
+
+    fclose(file);
+
+    return NO_ERR ;
+}
+
+
+void text_list_update_from_file (List_t * list, List_t * listFont, const char * dataPath) {
+    if (!existe(list)) {
+        printf("Impossible d'update le listTexture car list NULL\n"); 
+        return ;
+    }
+    
+    if (fileModified(dataPath)) {
+
+        FILE * file = fopen(dataPath, "r") ;
+        if (!existe(file)) {
+            fprintf(stderr, "Erreur ouverture du fichier %s : %s\n", dataPath, SDL_GetError());
+            return ;
+        }
+
+        // Variables pour stocker les données lues
+        int r, g, b, a;
+        int x, y, w, h;
+        int hollow, typeHollow ;
+        int hr, hg, hb, ha;
+        char key[64], string[512];
+        int animated, speed ;
+        int fontSize ;
+        int hidden ;
+        char buffer[256];
+
+        // Lecture de la première ligne
+        fgets(buffer, sizeof(buffer), file);
+
+        for (int i = 0; i < list->size; i++) {
+
+            Text_t * text = list->item(list, i) ;
+
+            // Lecture et initialisation des éléments
+            if (fscanf(file, "%[^;];%[^;];%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d%%", 
+                key, string, &r, &g, &b, &a, &x, &y, &hollow, &hr, &hg, &hb, &ha, &typeHollow, &animated, &speed, &fontSize, &hidden) == 18) {
+        
+                if (strcmp(text->string, string)) {
+                    int len = strlen(string) ;
+                    strcpy(text->string, string);
+                    text->len = len ;
+                }
+                
+                text_change_hollow(text, hollow, (SDL_Color){hr, hg, hb, ha}, typeHollow);
+        
+                if (!animated) {
+                    text->animation.currentFrame = text->animation.numFrames ;
+                    text->animation.frameCount = 0 ;
+                    text->animation.loop = FALSE ;
+                    text->animation.playing = FALSE ;
+                    text->animation.needChange = TRUE ;
+                }
+                else {
+                    text->animation.currentFrame = 0 ;
+                    text->animation.frameCount = 0 ;
+                    text->animation.loop = FALSE ;
+                    text->animation.playing = TRUE ;
+                }
+                text->animation.animationSpeed = speed ;
+                text->animation.position = (SDL_Rect){x, y, 0, 0} ;
+                text->animation.textColor = (SDL_Color){r, g, b, a} ;
+        
+                text->hidden = hidden ;
+                text_change_font(text, listFont->item(listFont, fontSize));
+            }
+            
+            text_update(text);
+        }
+
+        fclose(file);
+    }
+    else {
+        for (int i = 0; i < list->size; i++) {
+            text_update(list->item(list, i));
+        }
+    }
+}
+
+
+void get_text_dimensions (Text_t * text, int * w, int * h) {
+
+    if (existe(text) && existe(text->string)) {
+
+        char * buffer = malloc(sizeof(char) * (text->animation.currentFrame + 1)) ;
+        strncpy(buffer, text->string, text->animation.currentFrame);
+        buffer[text->animation.currentFrame] = '\0';
+
+        TTF_SizeUTF8(text->font, buffer, w, h);
+
+        free(buffer);
+    }
 }

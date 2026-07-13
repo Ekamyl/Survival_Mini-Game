@@ -5,19 +5,22 @@
 #include "../include/map.h"
 #include "../include/camera.h"
 #include "../include/render.h"
+#include "../include/gui.h"
 #include "../include/scene.h"
-#include "../include/desktop.h"
+#include "../include/dictionary.h"
+#include "../include/texture_loader.h"
 
 
 int init_systeme ();
-void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera);
+void terminate_system (Mix_Chunk * music, int audio, int ttf, int mixer, int img, int sdl);
 void print_fps (uint32_t * previousTime);
 void start_frame (uint32_t * timerStart);
 void end_frame (uint32_t * timerStart, uint32_t * previousTime);
 
 SDL_Window * window ; 
 SDL_Renderer * renderer ; 
-SceneManager_t * manager ;
+SceneManager_t * sceneManager ;
+SDL_Texture * render_texture ;
 GameStatus_t gameStatus ; 
 
 int main(int argc, char* argv[]) {
@@ -25,95 +28,47 @@ int main(int argc, char* argv[]) {
     if (init_systeme()) {
         return 1;
     }
-
-
-    // charge music 
-    Mix_Chunk * music = Mix_LoadWAV("music/ah_shit_here_we_go_again.ogg");
-    if (music == NULL) {
-        printf("Erreur de chargement music \"%s\": %s\n", "music/ah_shit_here_we_go_again.mp3", SDL_GetError());
-        terminate_system(NULL, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
-        return 1;
-    }
-    Mix_Chunk * snoreSound = Mix_LoadWAV("music/snore-mimimimimimi.ogg");
-    Mix_Chunk * spidermanSound = Mix_LoadWAV("music/spiderman-meme-song.ogg");
-
-    Mix_AllocateChannels(16);
     
-
-    // creer personnage 
-    Player_t * player = player_constructor();
-    if (player == NULL) {
-        terminate_system(music, TRUE, NULL, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
-        return 1;
-    }
-
-    Map_t * map = map_constructor();
-    if (map == NULL) {
-        terminate_system(music, TRUE, player, NULL, TRUE, TRUE, TRUE, TRUE, NULL);
-        return 1;
-    }
-
-    Camera_t * camera = camera_constructor (player);
-    if (camera == NULL) {
-        terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, NULL);
-        return 1;
-    }
     
     // variable pour l'affichage du nombre de FPS 
     uint32_t previousTime = SDL_GetTicks(); // to print fps every second 
-    
-    // Variable to keep track of the time elapsed during the actual frame rendering 
     uint32_t timerStart; 
-    uint32_t timerDelay; 
-
+    
     // variable gestion evenements 
     SDL_Event event ;
     int running = TRUE;
 
     // initialise le scene manager  
-    manager = create_scene_manager() ;
+    sceneManager = create_scene_manager() ;
+    Scene_t * bootScene = create_scene("BOOT", BOOT_load, BOOT_unLoad, BOOT_handleEvents, BOOT_update, BOOT_render);
     Scene_t * desktopScene = create_scene("DESKTOP", DESKTOP_load, DESKTOP_unLoad, DESKTOP_handleEvents, DESKTOP_update, DESKTOP_render);
     Scene_t * level1Scene = create_scene("LEVEL1", LEVEL1_load, LEVEL1_unLoad, LEVEL1_handleEvents, LEVEL1_update, LEVEL1_render);
-    push_scene(manager, desktopScene);
-    push_scene(manager, level1Scene);
-    request_scene_change(manager, "DESKTOP");
-    change_scene(manager);
+    push_scene(sceneManager, bootScene);
+    push_scene(sceneManager, desktopScene);
+    push_scene(sceneManager, level1Scene);
+    request_scene_change(sceneManager, "BOOT");
+    change_scene(sceneManager);
     
     // Boucle principale
-    while (running) {
+    while (running) { 
 
         // traitement debut frame 
         start_frame(&timerStart);
-        
-        // Récupère les données nécessaires de la scène actuelle
-        int currentIndex = manager->index ;
-        Scene_t * currentScene = manager->scenes[currentIndex] ;
-        InfoScene_t * info = (InfoScene_t *)currentScene->data[0] ;
 
-        // Joue la scène
-        currentScene->handleEvents(currentScene, &event) ;
-        currentScene->update(currentScene) ;
-        currentScene->render(currentScene) ;
-
-        // Vérification des scènes en attentes
-        if (strcmp(manager->nextScene, "") != 0) {
-            change_scene(manager); 
-        }
-
-        // Vérification de l'état du jeu (fin ou continuer)
-        if (info->end == TRUE) {
-            currentScene->unLoad(currentScene);
+        // Joue scene et vérification de l'état du jeu (fin ou continuer)
+        if (play_scene(sceneManager, &event)) { 
             running = FALSE ;
         } 
         
         // traitement fin frame  
         end_frame(&timerStart, &previousTime);
     }
-
+    
     // Nettoyage
-    Mix_FreeChunk(snoreSound);
-    Mix_FreeChunk(spidermanSound);
-    terminate_system(music, TRUE, player, map, TRUE, TRUE, TRUE, TRUE, camera);
+    destroy_scene_manager(&sceneManager);
+    terminate_system(NULL, TRUE, TRUE, TRUE, TRUE, TRUE);
+
+    printf("fin propre\n");
 
     return 0;
 }
@@ -125,8 +80,6 @@ void start_frame (uint32_t * timerStart) {
 
 
 void end_frame (uint32_t * timerStart, uint32_t * previousTime) {
-
-    print_fps(previousTime);
 
     gameStatus.frameCount++;
 
@@ -178,7 +131,7 @@ int init_systeme () {
 
 
     // Initialisation de SDL_mixer et configuration audio 
-    if (Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG) != (MIX_INIT_MP3 | MIX_INIT_OGG)) {
+    if (Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG) != (MIX_INIT_MP3 | MIX_INIT_OGG )) {
         printf("Erreur d'initialisation de SDL_mixer : %s\n", Mix_GetError());
         TTF_Quit();
         IMG_Quit();
@@ -221,48 +174,27 @@ int init_systeme () {
         SDL_Quit();
         return 1;
     }
+
+    render_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT) ;
     
     gameStatus.running = TRUE;
     gameStatus.scene = 0;
     gameStatus.frameCount = 0;
     gameStatus.updateCount = 0;
-    
-    // alloue memoire pour deux scene 
-    gameStatus.playScene = malloc(sizeof(int (*)(Camera_t *, Player_t *, Map_t *)) * 2);
-    if (gameStatus.playScene == NULL) {
-        printf("Erreur malloc gameStatus.playScene : %s\n", SDL_GetError()); 
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        destroy_noise_texture();
-        Mix_CloseAudio();
-        Mix_Quit();
-        TTF_Quit();
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    } 
 
     return 0;
 }
 
 
-void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * map, int ttf, int mixer, int img, int sdl, Camera_t * camera) {
+void terminate_system (Mix_Chunk * music, int audio, int ttf, int mixer, int img, int sdl) {
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    free(gameStatus.playScene); 
-    gameStatus.playScene = NULL;
     if (music) {
         Mix_FreeChunk(music);
     }
     if (audio) {
         Mix_CloseAudio();
-    }
-    if (player) {
-        player_destructor(&player);
-    }
-    if (map) {
-        map_destructor(&map);
     }
     if (ttf) {
         TTF_Quit();
@@ -275,9 +207,6 @@ void terminate_system (Mix_Chunk * music, int audio, Player_t * player, Map_t * 
     }
     if (sdl) {
         SDL_Quit();
-    }
-    if (camera) {
-        camera_destructor(&camera);
     }
 
 }

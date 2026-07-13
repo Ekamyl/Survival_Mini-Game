@@ -1,75 +1,50 @@
-# ☄️ Survival Mini-Game
+# MiniJeu_Survie - Projet Chapper's Fallout
 
-Un mini-jeu de survie arcade nerveux développé en **C** avec la bibliothèque **SDL2**. Ce projet propose une expérience immersive unique grâce à une interface simulant un système d'exploitation rétro.
+## Contexte
 
----
+Ce projet est un dérivé du projet principal *Chapper's Fallout*, développé dans le cadre de la 2e année de Licence Informatique à l’Université du Mans. Le mini-jeu présenté ici n’a **pas vocation à être un jeu autonome**, mais devait initialement être **intégré dans l’environnement 3D principal** via un ordinateur interactif dans le bâtiment Claude Chappe.
 
-## 🕹️ Présentation du Jeu
+Cependant, en raison de problèmes techniques survenus en fin de développement, l’intégration dans la scène principale n’a **pas pu aboutir à temps**. Pour cette raison, le mini-jeu a été placé dans une **branche dédiée du dépôt GitHub**, sous le nom de `Ekamyl`, et reste jouable **en standalone** via une exécution directe.
 
-Le jeu s'ouvre sur une séquence d'initialisation scriptée, simulant le démarrage d'un ordinateur. Une fois le système chargé, une fenêtre de gameplay s'affiche sur un bureau virtuel.
+Mini-jeu réalisé par **Ekrem (Ekamyl)**.
 
-**Le concept :**
-Incarnez un personnage dont la survie dépend de vos réflexes. Vous devez esquiver une pluie de boules de feu tombant du ciel de manière aléatoire. Tenez le plus longtemps possible pour battre votre score dans une ambiance visuelle et sonore dynamique.
+## Mini-jeu : Survie face aux boules de feu
 
----
+Le jeu se déroule dans une fausse interface système simulée, inspirée d’un bureau d’ordinateur. Dès le lancement, une animation initie un faux système d’exploitation, sur lequel une fenêtre s’ouvre pour laisser place au gameplay.
 
-## 🎮 Contrôles
+Le principe est simple :  
+Vous incarnez un petit personnage qui doit **survivre pendant un temps donné** en esquivant des **boules de feu** qui tombent aléatoirement du ciel. Ce mini-jeu mêle réflexes, concentration et une ambiance légère soutenue par quelques **effets visuels et animations dynamiques**.
 
-Le jeu se prend en main instantanément avec les commandes suivantes :
+## Fonctionnement
 
-* **Déplacements :** Touches directionnelles (**Flèches**) ou **ZQSD** (selon la configuration).
-* **Interactions :** La souris est utilisée pour naviguer dans l'interface du "système d'exploitation" au lancement.
-* **Quitter :** Touche **Echap** ou fermeture de la fenêtre.
+Le mini-jeu utilise SDL2 et repose sur une **gestion complète des fenêtres et des événements**. Un `event manager` dédié capte les entrées clavier/souris en temps réel, et orchestre les transitions entre les différentes phases du jeu (lancement, gameplay, fin de partie).
 
----
+Les textures, animations et interactions sont gérées via un système de spritesheets avec un compteur de frames, garantissant des animations fluides et cohérentes.
 
-## 🛠️ Spécifications Techniques
+## Accès au mini-jeu
 
-L'architecture du jeu est modulaire et repose sur les fonctionnalités avancées de la **SDL2** :
+Le mini-jeu est accessible de deux façons :
 
-* **Interface OS Simulée :** Animations de chargement et fenêtrage interne pour renforcer l'immersion.
-* **Gestionnaire d'Événements :** Un *Event Manager* centralisé traite les entrées clavier et souris en temps réel.
-* **Moteur d'Animation :** Utilisation de *spritesheets* avec un compteur de frames interne pour des mouvements fluides.
-* **Extensions Multimédia :** Intégration de `SDL2_image`, `SDL2_ttf` (textes) et `SDL2_mixer` (audio).
+- **En lançant le jeu principal** avec une **touche spéciale** (définie dans le code) qui permet de **sauter directement au mini-jeu** sans passer par l’environnement 3D.
+- **Depuis la branche GitHub `Ekamyl`**, qui contient une version isolée et autonome du mini-jeu, destinée aux tests et démonstrations.
 
----
+## Dépendances
 
-## 📋 Prérequis & Dépendances
+Même environnement que le projet principal :
 
-Le projet est conçu pour les systèmes de type Unix (Linux/macOS). Les bibliothèques de développement suivantes sont nécessaires :
+- SDL2
+- SDL2 Image
+- SDL2 TTF
+- SDL2 Mixer
 
-* **SDL2** (Core), **SDL2_image**, **SDL2_ttf**, **SDL2_mixer**
-
-### Installation des dépendances (Debian/Ubuntu)
-
-```bash
-sudo apt update
+Installation (Debian) :
+```sh
 sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
 ```
 
----
-
-## 🚀 Compilation et Exécution
-
-Utilisez le Makefile inclus pour gérer le projet simplement depuis votre terminal :
-
-```bash
-# Pour compiler le projet et générer l'exécutable
-make
-
-# Pour compiler et lancer le jeu directement
-make run
-
-# Pour nettoyer les fichiers objets (.o) et l'exécutable
-make clean
+Compilation (unix systemes) :
+```sh
+make            # Compile le mini-jeu.
+make run         # Compile et lance le mini-jeu.
+make clear      # Nettoie les fichiers générés.
 ```
-
----
-
-# 📂 Informations sur le Dépôt
-
-Ce dépôt contient la version autonome et finale du mini-jeu.
-
-- Auteur : Ekrem (Ekamyl)
-
-- Dépôt Officiel : https://github.com/Ekamyl/Survival_Mini-Game

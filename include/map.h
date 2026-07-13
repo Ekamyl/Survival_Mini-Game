@@ -3,8 +3,15 @@
 
 #include "physics.h"
 #include "window.h"
+#include "texture_loader.h"
 
-extern GameStatus_t gameStatus ;
+#define ACT_ID_LOSS_PV 0 
+
+typedef struct List_u List_t ;
+typedef struct Player_u Player_t ;
+typedef struct Scene_u Scene_t ;
+
+extern GameStatus_t gameStatus ; 
 
 #define BACKGROUND_WIDTH 2304
 #define BACKGROUND_HEIGHT 1296
@@ -12,35 +19,30 @@ extern GameStatus_t gameStatus ;
 #define GROUND_WIDTH BACKGROUND_WIDTH
 #define GROUND_HEIGHT (WINDOW_HEIGHT / 4)
 
-#define ICON_LOCK 0
-#define ICON_GAME 1
-#define ICON_DOC 2
-#define ERROR_WINDOW 3
-#define TOP_BORDER 4
-#define LEFT_BORDER 5
-#define RIGHT_BORDER 6
-#define BOTTOM_BORDER 7
+typedef struct MapObj_u {
+    uint8_t idSpriteSheet ;
+    Texture_t sprite ;
+    float vx, vy ;
 
-typedef struct DesktopElement_u {
-    SDL_Rect srcrect ;
-    SDL_Rect position ;
-    int hidden ;        // TRUE or FALSE 
-    int clicked ;       // TRUE or FALSE 
-    int dragged ;       // TRUE or FALSE 
-} DesktopElement_t ; 
+    uint8_t idAction ;      // action a réaliser quand personnage touche obj (si applicable)
+} MapObj_t ;
 
 typedef struct Map_u {
     SDL_Texture * background ;
 
     SDL_FRect ground ;
-    
-    SDL_Texture * objectsTexture ;
-    DesktopElement_t * listElements ;
-    int nbObject;
+
+    List_t * listSpriteSheet ;    
+    List_t * listObjects ;
 } Map_t ;
 
 
-DesktopElement_t * load_elements(int nbObject);
 Map_t * map_constructor () ;
 void map_destructor (Map_t ** map) ;
-void init_elements_scene0 (Map_t * map);
+void map_destructor_cb (void * map) ;
+void map_update (Scene_t * scene, Map_t * map, Player_t * player) ;
+
+MapObj_t * create_mapObj () ;
+void destroy_mapObj (MapObj_t ** object) ;
+void destroy_mapObj_cb (void * object) ;
+void mapObj_action (Scene_t * scene, Map_t * map, Player_t * player, uint8_t idAction) ;

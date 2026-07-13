@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "commun.h"
+#include "utils.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -21,7 +21,5 @@ typedef struct {
     int frameCount ;
     int updateCount ;
     int scene ;
-
-    int (*(*playScene)) (Camera_t *, Player_t *, Map_t *);
 } GameStatus_t ; 
 
